@@ -2,7 +2,9 @@ package main
 
 import (
 	ll "Snake/linkedlist"
+	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	gc "github.com/rthornton128/goncurses"
@@ -11,17 +13,20 @@ import (
 const headTexture = `#`
 const tailTexture = `o`
 const foodTexture = `*`
+const emptyTexture = ` `
 
-var up = &point{0, -1}
-var down = &point{0, 1}
-var left = &point{-1, 0}
-var right = &point{1, 0}
+var up = &point{-1, 0}
+var down = &point{1, 0}
+var left = &point{0, -1}
+var right = &point{0, 1}
 var nowhere = &point{0, 0}
 
 var objects = make([]object, 0)
 
+var removed = &ll.Node{Data: &point{0, 0}}
+
 type point struct {
-	x, y int
+	y, x int
 }
 
 type object interface {
@@ -38,6 +43,10 @@ type snake struct {
 type food struct {
 	position point
 	color    int
+}
+
+func (p *point) String() string {
+	return fmt.Sprintf("y: %d, x: %d", p.y, p.x)
 }
 
 func (s *snake) update(w *gc.Window) {
@@ -59,18 +68,19 @@ func (s *snake) update(w *gc.Window) {
 		return
 	}
 
-	dx := s.head.Data.(point).x + offset.x
 	dy := s.head.Data.(point).y + offset.y
-	newHead := &ll.Node{Data: point{dx, dy}}
-	s.head = newHead
+	dx := s.head.Data.(point).x + offset.x
+	newHead := &ll.Node{Data: point{dy, dx}}
 	last := s.body.Back()
-	w.MoveDelChar(last.Data.(point).y, last.Data.(point).x)
+	w.MovePrint(last.Data.(point).y, last.Data.(point).x, emptyTexture)
+	removed = s.body.RemoveLast()
 	s.body.Prepend(newHead)
-	s.body.RemoveLast()
+	s.head = newHead
 }
 
 func (s *snake) draw(w *gc.Window) {
-	for node := s.head; node.Next() != nil; node = node.Next() {
+	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
+	for node := s.head.Next(); node.Next() != nil; node = node.Next() {
 		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
 	}
 }
@@ -117,6 +127,8 @@ func handleInput(w *gc.Window, s *snake) bool {
 		return true
 	case 'q':
 		return false
+	case 'e':
+		udpateObjects(w)
 	default:
 		break
 	}
@@ -136,17 +148,38 @@ func gameOver(s *gc.Window) {
 	gc.Nap(2000)
 }
 
-func createSnake(x, y int) *snake {
-	head := &ll.Node{Data: point{x, y}}
+func drawDebugStats(maxY int, maxX int, sn *snake, s *gc.Window) {
+	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
+	dir := "direction: " + sn.direction.String()
+	objectsAmount := "objects: " + strconv.Itoa(len(objects))
+	rem := "removed: " + removed.String()
+
+	end, err := gc.NewWindow(6, maxX-2, 0, 1)
+
+	if err != nil {
+		log.Fatal("Error creating debug window", err)
+	}
+
+	end.MovePrint(1, 1, snakeLength)
+	end.MovePrint(2, 1, dir)
+	end.MovePrint(3, 1, objectsAmount)
+	end.MovePrint(4, 1, rem)
+	end.Box(gc.ACS_VLINE, gc.ACS_HLINE)
+	end.Refresh()
+}
+
+func createSnake(y, x int) *snake {
+	head := &ll.Node{Data: point{y, x}}
 	body := ll.New()
 
-	body.Append(head)
-	body.Append(&ll.Node{Data: point{x + 1, y}})
-	body.Append(&ll.Node{Data: point{x + 2, y}})
-	body.Append(&ll.Node{Data: point{x + 3, y}})
-	body.Append(&ll.Node{Data: point{x + 4, y}})
+	body.Append(&ll.Node{Data: point{y, x + 1}})
+	body.Append(&ll.Node{Data: point{y, x + 2}})
+	body.Append(&ll.Node{Data: point{y, x + 3}})
+	body.Append(&ll.Node{Data: point{y, x + 4}})
+	body.Append(&ll.Node{Data: point{y, x + 5}})
+	body.Prepend(head)
 
-	newSnake := &snake{head, body, right}
+	newSnake := &snake{head, body, left}
 	objects = append(objects, newSnake)
 	return newSnake
 }
@@ -163,13 +196,14 @@ func main() {
 
 	gc.Cursor(0)
 	gc.Echo(false)
-	gc.HalfDelay(1)
+	gc.HalfDelay(2)
 
 	ticker := time.NewTicker(time.Second / 6)
-	snake := createSnake(5, 5)
-
+	maxY, maxX := stdscr.MaxYX()
+	snake := createSnake(maxY/2, maxX/2)
 	for {
 		stdscr.Refresh()
+		drawDebugStats(maxY, maxX, snake, stdscr)
 		select {
 		case <-ticker.C:
 			tick(ticker, stdscr)

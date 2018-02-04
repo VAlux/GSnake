@@ -1,5 +1,7 @@
 package linkedlist
 
+import "fmt"
+
 // Node is a single list node containing pointer to the next node and data payload
 type Node struct {
 	next *Node
@@ -12,6 +14,10 @@ type LinkedList struct {
 	size int
 }
 
+func (node *Node) String() string {
+	return fmt.Sprintf("data: %s", node.Data)
+}
+
 // Init returns initialized linked list
 func (list *LinkedList) Init() *LinkedList {
 	list.size = 0
@@ -22,6 +28,11 @@ func (list *LinkedList) Init() *LinkedList {
 func New() *LinkedList {
 	list := new(LinkedList).Init()
 	return list
+}
+
+// Size returns the actual amount of elements in the linked list
+func (list *LinkedList) Size() int {
+	return list.size
 }
 
 // Next returns the next node relative to the current node
@@ -82,9 +93,16 @@ func (list *LinkedList) PrependList(newList *LinkedList) {
 }
 
 // RemoveLast remove last node from the list and return it
-func (list *LinkedList) RemoveLast() {
-	preLast := list.GetAt(list.size - 2)
-	preLast.next = nil
+func (list *LinkedList) RemoveLast() *Node {
+	current := list.head
+	for current.next.next != nil {
+		current = current.next
+	}
+	last := current.next
+	current.next = nil
+	list.size--
+
+	return last
 }
 
 // GetAt returns node of the list at the specified index beginning from 0
