@@ -113,3 +113,13 @@ func (list *LinkedList) GetAt(index int) *Node {
 	}
 	return current
 }
+
+// Contains returns true if specified node is present in the list
+func (list *LinkedList) Contains(node *Node) bool {
+	for current := list.head; current.next != nil; current = current.next {
+		if current.Data == node.Data {
+			return true
+		}
+	}
+	return false
+}

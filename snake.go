@@ -1,11 +1,12 @@
 package main
 
 import (
-	ll "Snake/linkedlist"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
+
+	ll "Snake/linkedlist"
 
 	gc "github.com/rthornton128/goncurses"
 )
@@ -41,7 +42,7 @@ type snake struct {
 }
 
 type food struct {
-	position point
+	position *point
 	color    int
 }
 
@@ -71,11 +72,16 @@ func (s *snake) update(w *gc.Window) {
 	dy := s.head.Data.(point).y + offset.y
 	dx := s.head.Data.(point).x + offset.x
 	newHead := &ll.Node{Data: point{dy, dx}}
+
 	last := s.body.Back()
 	w.MovePrint(last.Data.(point).y, last.Data.(point).x, emptyTexture)
 	removed = s.body.RemoveLast()
 	s.body.Prepend(newHead)
 	s.head = newHead
+}
+
+func (s *snake) checkCollision(n *ll.Node) bool {
+	return s.body.Contains(n)
 }
 
 func (s *snake) draw(w *gc.Window) {
@@ -105,7 +111,7 @@ func udpateObjects(w *gc.Window) {
 	}
 }
 
-func tick(t *time.Ticker, w *gc.Window) {
+func tick(w *gc.Window) {
 	udpateObjects(w)
 	drawObjects(w)
 }
@@ -114,21 +120,27 @@ func handleInput(w *gc.Window, s *snake) bool {
 	key := w.GetChar()
 	switch byte(key) {
 	case 'w':
-		s.direction = up
+		if s.direction != down {
+			s.direction = up
+		}
 		return true
 	case 's':
-		s.direction = down
+		if s.direction != up {
+			s.direction = down
+		}
 		return true
 	case 'a':
-		s.direction = left
+		if s.direction != right {
+			s.direction = left
+		}
 		return true
 	case 'd':
-		s.direction = right
+		if s.direction != left {
+			s.direction = right
+		}
 		return true
 	case 'q':
 		return false
-	case 'e':
-		udpateObjects(w)
 	default:
 		break
 	}
@@ -138,34 +150,27 @@ func handleInput(w *gc.Window, s *snake) bool {
 func gameOver(s *gc.Window) {
 	lines, cols := s.MaxYX()
 	msg := "Game Over"
-	end, err := gc.NewWindow(5, len(msg)+4, (lines/2)-2, (cols-len(msg))/2)
-	if err != nil {
-		log.Fatal("game over:", err)
-	}
-	end.MovePrint(2, 2, msg)
-	end.Box(gc.ACS_VLINE, gc.ACS_HLINE)
-	end.Refresh()
+
+	wnd := createWindow(5, len(msg)+4, (lines/2)-2, (cols-len(msg))/2)
+	wnd.MovePrint(2, 2, msg)
+	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
+	wnd.Refresh()
 	gc.Nap(2000)
 }
 
-func drawDebugStats(maxY int, maxX int, sn *snake, s *gc.Window) {
+func drawDebugStats(maxY int, maxX int, sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
 	dir := "direction: " + sn.direction.String()
 	objectsAmount := "objects: " + strconv.Itoa(len(objects))
 	rem := "removed: " + removed.String()
 
-	end, err := gc.NewWindow(6, maxX-2, 0, 1)
-
-	if err != nil {
-		log.Fatal("Error creating debug window", err)
-	}
-
-	end.MovePrint(1, 1, snakeLength)
-	end.MovePrint(2, 1, dir)
-	end.MovePrint(3, 1, objectsAmount)
-	end.MovePrint(4, 1, rem)
-	end.Box(gc.ACS_VLINE, gc.ACS_HLINE)
-	end.Refresh()
+	wnd := createWindow(6, maxX-2, 0, 1)
+	wnd.MovePrint(1, 1, snakeLength)
+	wnd.MovePrint(2, 1, dir)
+	wnd.MovePrint(3, 1, objectsAmount)
+	wnd.MovePrint(4, 1, rem)
+	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
+	wnd.Refresh()
 }
 
 func createSnake(y, x int) *snake {
@@ -182,6 +187,14 @@ func createSnake(y, x int) *snake {
 	newSnake := &snake{head, body, left}
 	objects = append(objects, newSnake)
 	return newSnake
+}
+
+func createWindow(height, width, y, x int) *gc.Window {
+	wnd, err := gc.NewWindow(height, width, y, x)
+	if err != nil {
+		log.Fatal("Error duirng creating window...")
+	}
+	return wnd
 }
 
 func main() {
@@ -201,12 +214,13 @@ func main() {
 	ticker := time.NewTicker(time.Second / 6)
 	maxY, maxX := stdscr.MaxYX()
 	snake := createSnake(maxY/2, maxX/2)
+
 	for {
 		stdscr.Refresh()
-		drawDebugStats(maxY, maxX, snake, stdscr)
+		drawDebugStats(maxY, maxX, snake)
 		select {
 		case <-ticker.C:
-			tick(ticker, stdscr)
+			tick(stdscr)
 		default:
 			if !handleInput(stdscr, snake) {
 				return
