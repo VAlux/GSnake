@@ -158,13 +158,13 @@ func gameOver(s *gc.Window) {
 	gc.Nap(2000)
 }
 
-func drawDebugStats(maxY int, maxX int, sn *snake) {
+func drawDebugStats(height int, width int, y int, x int, sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
 	dir := "direction: " + sn.direction.String()
 	objectsAmount := "objects: " + strconv.Itoa(len(objects))
 	rem := "removed: " + removed.String()
 
-	wnd := createWindow(6, maxX-2, 0, 1)
+	wnd := createWindow(height, width-2, y, x)
 	wnd.MovePrint(1, 1, snakeLength)
 	wnd.MovePrint(2, 1, dir)
 	wnd.MovePrint(3, 1, objectsAmount)
@@ -197,6 +197,13 @@ func createWindow(height, width, y, x int) *gc.Window {
 	return wnd
 }
 
+func createGameWindow(y, x, height, width int) *gc.Window {
+	wnd := createWindow(height, width, y, x)
+	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
+	wnd.Refresh()
+	return wnd
+}
+
 func main() {
 	stdscr, err := gc.Init()
 
@@ -211,18 +218,21 @@ func main() {
 	gc.Echo(false)
 	gc.HalfDelay(2)
 
-	ticker := time.NewTicker(time.Second / 6)
 	maxY, maxX := stdscr.MaxYX()
+	statsX, statsY, statsH, statsW := 1, 0, 6, maxX
+
+	ticker := time.NewTicker(time.Second / 6)
 	snake := createSnake(maxY/2, maxX/2)
+	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 
 	for {
-		stdscr.Refresh()
-		drawDebugStats(maxY, maxX, snake)
 		select {
 		case <-ticker.C:
-			tick(stdscr)
+			tick(gameWindow)
+			gameWindow.Refresh()
+			drawDebugStats(statsH, statsW, statsY, statsX, snake)
 		default:
-			if !handleInput(stdscr, snake) {
+			if !handleInput(gameWindow, snake) {
 				return
 			}
 		}
