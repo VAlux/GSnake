@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -28,7 +29,6 @@ var nowhere = &point{0, 0}
 
 var objects = make([]object, 0)
 var events = make(chan string, 1)
-var removed = &ll.Node{Data: &point{0, 0}}
 
 var maxX = 0
 var maxY = 0
@@ -86,9 +86,16 @@ func (s *snake) update(w *gc.Window) {
 
 	last := s.body.Back()
 	w.MovePrint(last.Data.(point).y, last.Data.(point).x, emptyTexture)
-	removed = s.body.RemoveLast()
+	s.body.RemoveLast()
 	s.body.Prepend(newHead)
 	s.head = newHead
+}
+
+func (s *snake) draw(w *gc.Window) {
+	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
+	for node := s.head.Next(); node.Next() != nil; node = node.Next() {
+		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
+	}
 }
 
 func (s *snake) checkCollision(n *ll.Node) bool {
@@ -99,14 +106,16 @@ func (s *snake) checkCollision(n *ll.Node) bool {
 		s.body.Contains(n)
 }
 
-func (s *snake) draw(w *gc.Window) {
-	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
-	for node := s.head.Next(); node.Next() != nil; node = node.Next() {
-		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
+func (s *snake) containsNodeWithPoint(pt *point) bool {
+	for node := s.head; node != nil; node = node.Next() {
+		if node.Data.(point) == *pt {
+			return true
+		}
 	}
+	return false
 }
 
-func (f *food) update() {
+func (f *food) update(w *gc.Window) {
 	// TODO: update the food color
 }
 
@@ -157,9 +166,8 @@ func handleInput(w *gc.Window, s *snake) bool {
 	case 'q':
 		return false
 	default:
-		break
+		return true
 	}
-	return true
 }
 
 func gameOver(s *gc.Window) {
@@ -199,8 +207,17 @@ func createSnake(y, x int) *snake {
 	body.Prepend(head)
 
 	newSnake := &snake{head, body, left}
-	objects = append(objects, newSnake)
 	return newSnake
+}
+
+func generateFood(sn *snake) *food {
+	randX := 1 + rand.Intn(maxX-1)
+	randY := 1 + rand.Intn(maxY-1)
+	foodPos := &point{y: randY, x: randX}
+	if sn.containsNodeWithPoint(foodPos) {
+		generateFood(sn)
+	}
+	return &food{position: foodPos}
 }
 
 func createWindow(height, width, y, x int) *gc.Window {
@@ -232,11 +249,15 @@ func main() {
 	gc.Echo(false)
 	gc.HalfDelay(2)
 
+	rand.Seed(int64(time.Now().Second()))
 	maxY, maxX = stdscr.MaxYX()
 	//statsX, statsY, statsH, statsW := 1, 0, 6, maxX
 
 	ticker := time.NewTicker(time.Second / 6)
 	snake := createSnake(maxY/2, maxX/2)
+	food := generateFood(snake)
+
+	objects = append(objects, snake, food)
 	//gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 	gameWindow := createGameWindow(0, 0, maxY, maxX)
 
