@@ -18,6 +18,7 @@ const foodTexture = `*`
 const emptyTexture = ` `
 
 const collisionEvent = "collision"
+const exitEvent = "exit"
 
 const initialLength = 10
 
@@ -140,33 +141,34 @@ func tick(w *gc.Window) {
 	drawObjects(w)
 }
 
-func handleInput(w *gc.Window, s *snake) bool {
+func handleInput(w *gc.Window, s *snake) {
 	key := w.GetChar()
 	switch byte(key) {
 	case 'w':
 		if s.direction != down {
 			s.direction = up
 		}
-		return true
+		break
 	case 's':
 		if s.direction != up {
 			s.direction = down
 		}
-		return true
+		break
 	case 'a':
 		if s.direction != right {
 			s.direction = left
 		}
-		return true
+		break
 	case 'd':
 		if s.direction != left {
 			s.direction = right
 		}
-		return true
+		break
 	case 'q':
-		return false
+		events <- exitEvent
+		break
 	default:
-		return true
+		break
 	}
 }
 
@@ -263,6 +265,8 @@ func main() {
 
 	//Game Loop:
 	for {
+		handleInput(gameWindow, snake)
+
 		select {
 		case <-ticker.C:
 			tick(gameWindow)
@@ -272,8 +276,7 @@ func main() {
 			if event == collisionEvent {
 				return
 			}
-		default:
-			if !handleInput(gameWindow, snake) {
+			if event == exitEvent {
 				return
 			}
 		}
