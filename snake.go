@@ -20,7 +20,7 @@ const emptyTexture = ` `
 const collisionEvent = "collision"
 const exitEvent = "exit"
 
-const initialLength = 10
+const initialLength = 3
 
 var up = &point{-1, 0}
 var down = &point{1, 0}
@@ -30,6 +30,7 @@ var nowhere = &point{0, 0}
 
 var objects = make([]object, 0)
 var events = make(chan string, 1)
+var currentFood = &food{}
 
 var maxX = 0
 var maxY = 0
@@ -56,6 +57,11 @@ type food struct {
 
 func (p point) String() string {
 	return fmt.Sprintf("y: %d, x: %d", p.y, p.x)
+}
+
+func (p point) offset(dy, dx int) {
+	p.y += dy
+	p.x += dx
 }
 
 func (s *snake) update(w *gc.Window) {
@@ -85,6 +91,12 @@ func (s *snake) update(w *gc.Window) {
 		events <- collisionEvent
 	}
 
+	if s.checkFoodCollision(newHead) {
+		s.body.Prepend(&ll.Node{Data: point{dy, dx}})
+		newHead.Data.(point).offset(offset.y, offset.x)
+		*currentFood = *generateFood(s)
+	}
+
 	last := s.body.Back()
 	w.MovePrint(last.Data.(point).y, last.Data.(point).x, emptyTexture)
 	s.body.RemoveLast()
@@ -105,6 +117,10 @@ func (s *snake) checkCollision(n *ll.Node) bool {
 		n.Data.(point).x >= maxX-1 ||
 		n.Data.(point).y >= maxY-1 ||
 		s.body.Contains(n)
+}
+
+func (s *snake) checkFoodCollision(n *ll.Node) bool {
+	return n.Data.(point) == *currentFood.position
 }
 
 func (s *snake) containsNodeWithPoint(pt *point) bool {
@@ -213,8 +229,8 @@ func createSnake(y, x int) *snake {
 }
 
 func generateFood(sn *snake) *food {
-	randX := 1 + rand.Intn(maxX-1)
-	randY := 1 + rand.Intn(maxY-1)
+	randX := 1 + rand.Intn(maxX-2)
+	randY := 1 + rand.Intn(maxY-2)
 	foodPos := &point{y: randY, x: randX}
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
@@ -257,9 +273,9 @@ func main() {
 
 	ticker := time.NewTicker(time.Second / 6)
 	snake := createSnake(maxY/2, maxX/2)
-	food := generateFood(snake)
+	currentFood = generateFood(snake)
 
-	objects = append(objects, snake, food)
+	objects = append(objects, snake, currentFood)
 	//gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 	gameWindow := createGameWindow(0, 0, maxY, maxX)
 
@@ -274,10 +290,10 @@ func main() {
 			//drawDebugStats(statsH, statsW, statsY, statsX, snake)
 		case event := <-events:
 			if event == collisionEvent {
-				return
+				return // exit
 			}
 			if event == exitEvent {
-				return
+				return // exit
 			}
 		}
 	}
