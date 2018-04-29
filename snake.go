@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
@@ -34,6 +35,10 @@ var currentFood = &food{}
 
 var maxX = 0
 var maxY = 0
+var statsX = 0
+var statsY = 0
+var statsH = 0
+var statsW = 0
 
 type point struct {
 	y, x int
@@ -62,6 +67,11 @@ func (p point) String() string {
 func (p point) offset(dy, dx int) {
 	p.y += dy
 	p.x += dx
+}
+
+func (p point) offsetP(off *point) {
+	p.y += off.y
+	p.x += off.x
 }
 
 func (s *snake) update(w *gc.Window) {
@@ -93,7 +103,7 @@ func (s *snake) update(w *gc.Window) {
 
 	if s.checkFoodCollision(newHead) {
 		s.body.Prepend(&ll.Node{Data: point{dy, dx}})
-		newHead.Data.(point).offset(offset.y, offset.x)
+		newHead.Data.(point).offsetP(offset)
 		*currentFood = *generateFood(s)
 	}
 
@@ -115,7 +125,7 @@ func (s *snake) checkCollision(n *ll.Node) bool {
 	return n.Data.(point).x <= 0 ||
 		n.Data.(point).y <= 0 ||
 		n.Data.(point).x >= maxX-1 ||
-		n.Data.(point).y >= maxY-1 ||
+		n.Data.(point).y >= maxY-statsH-1 ||
 		s.body.Contains(n)
 }
 
@@ -199,17 +209,13 @@ func gameOver(s *gc.Window) {
 	gc.Nap(2000)
 }
 
-func drawDebugStats(height int, width int, y int, x int, sn *snake) {
+func drawStats(height int, width int, y int, x int, sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
-	dir := "direction: " + sn.direction.String()
-	objectsAmount := "objects: " + strconv.Itoa(len(objects))
-	rem := "head: " + sn.head.Data.(point).String()
+	lifes := "lifes: " + strconv.Itoa(3)
 
 	wnd := createWindow(height, width-2, y, x)
 	wnd.MovePrint(1, 1, snakeLength)
-	wnd.MovePrint(2, 1, dir)
-	wnd.MovePrint(3, 1, objectsAmount)
-	wnd.MovePrint(4, 1, rem)
+	wnd.MovePrint(1, len(snakeLength)+3, lifes)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
 	wnd.Refresh()
 }
@@ -230,7 +236,7 @@ func createSnake(y, x int) *snake {
 
 func generateFood(sn *snake) *food {
 	randX := 1 + rand.Intn(maxX-2)
-	randY := 1 + rand.Intn(maxY-2)
+	randY := 1 + rand.Intn(maxY-statsH-1)
 	foodPos := &point{y: randY, x: randX}
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
@@ -253,6 +259,14 @@ func createGameWindow(y, x, height, width int) *gc.Window {
 	return wnd
 }
 
+func openLogFile() *os.File {
+	logFile, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Error opening file: %v", err)
+	}
+	return logFile
+}
+
 func main() {
 	stdscr, err := gc.Init()
 
@@ -260,24 +274,42 @@ func main() {
 		log.Println("Error during ncurses Init:", err)
 	}
 
+	// Logging setup
+	logFile := openLogFile()
+	log.SetOutput(logFile)
+	//
+
+	// Finalization
+	defer logFile.Close()
 	defer gc.End()
 	defer gameOver(stdscr)
+	defer log.Println(" <==== Game session ended")
+	//
 
+	log.Println(" ====> Game session started")
+
+	// Basic ncurses setup
 	gc.Cursor(0)
 	gc.Echo(false)
 	gc.HalfDelay(2)
+	//
 
 	rand.Seed(int64(time.Now().Second()))
+
+	// Screen dimensions initialization
 	maxY, maxX = stdscr.MaxYX()
-	//statsX, statsY, statsH, statsW := 1, 0, 6, maxX
+	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
+	//
 
 	ticker := time.NewTicker(time.Second / 6)
+
+	// Create main game objects
 	snake := createSnake(maxY/2, maxX/2)
 	currentFood = generateFood(snake)
-
 	objects = append(objects, snake, currentFood)
-	//gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
-	gameWindow := createGameWindow(0, 0, maxY, maxX)
+	//
+
+	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 
 	//Game Loop:
 	for {
@@ -287,12 +319,14 @@ func main() {
 		case <-ticker.C:
 			tick(gameWindow)
 			gameWindow.Refresh()
-			//drawDebugStats(statsH, statsW, statsY, statsX, snake)
+			drawStats(statsH, statsW, statsY, statsX, snake)
 		case event := <-events:
 			if event == collisionEvent {
+				log.Println("Collision occurred")
 				return // exit
 			}
 			if event == exitEvent {
+				log.Println("Exit called")
 				return // exit
 			}
 		}
