@@ -9,6 +9,7 @@ import (
 	"time"
 
 	ll "Snake/linkedlist"
+	qe "Snake/queue"
 
 	gc "github.com/rthornton128/goncurses"
 )
@@ -31,6 +32,7 @@ var nowhere = &point{0, 0}
 
 var objects = make([]object, 0)
 var events = make(chan string, 1)
+var eventQueue = qe.New()
 var currentFood = &food{}
 
 var maxX = 0
@@ -116,7 +118,7 @@ func (s *snake) update(w *gc.Window) {
 
 func (s *snake) draw(w *gc.Window) {
 	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
-	for node := s.head.Next(); node.Next() != nil; node = node.Next() {
+	for node := s.head.Next; node.Next != nil; node = node.Next {
 		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
 	}
 }
@@ -134,7 +136,7 @@ func (s *snake) checkFoodCollision(n *ll.Node) bool {
 }
 
 func (s *snake) containsNodeWithPoint(pt *point) bool {
-	for node := s.head; node != nil; node = node.Next() {
+	for node := s.head; node != nil; node = node.Next {
 		if node.Data.(point) == *pt {
 			return true
 		}
@@ -143,7 +145,7 @@ func (s *snake) containsNodeWithPoint(pt *point) bool {
 }
 
 func (f *food) update(w *gc.Window) {
-	// TODO: update the food color
+	// TODO: update the food color and/or animation
 }
 
 func (f *food) draw(w *gc.Window) {
@@ -192,6 +194,7 @@ func handleInput(w *gc.Window, s *snake) {
 		break
 	case 'q':
 		events <- exitEvent
+		eventQueue.PushBack(&ll.Node{Data: exitEvent})
 		break
 	default:
 		break
@@ -299,6 +302,7 @@ func main() {
 	// Screen dimensions initialization
 	maxY, maxX = stdscr.MaxYX()
 	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
+	log.Printf("Resolution: %d x %d", maxX, maxY)
 	//
 
 	ticker := time.NewTicker(time.Second / 6)
@@ -309,6 +313,8 @@ func main() {
 	objects = append(objects, snake, currentFood)
 	//
 
+	gc.StartColor()
+	gc.InitPair(1, gc.C_BLACK, gc.C_GREEN)
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 
 	//Game Loop:
@@ -317,6 +323,7 @@ func main() {
 
 		select {
 		case <-ticker.C:
+			gc.SlkAttributeOn(gc.ColorPair(1))
 			tick(gameWindow)
 			gameWindow.Refresh()
 			drawStats(statsH, statsW, statsY, statsX, snake)

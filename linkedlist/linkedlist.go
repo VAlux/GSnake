@@ -4,7 +4,7 @@ import "fmt"
 
 // Node is a single list node containing pointer to the next node and data payload
 type Node struct {
-	next *Node
+	Next *Node
 	Data interface{}
 }
 
@@ -35,11 +35,6 @@ func (list *LinkedList) Size() int {
 	return list.size
 }
 
-// Next returns the next node relative to the current node
-func (n *Node) Next() *Node {
-	return n.next
-}
-
 // Head returns first node of the list
 func (list *LinkedList) Head() *Node {
 	return list.head
@@ -48,8 +43,8 @@ func (list *LinkedList) Head() *Node {
 // Back returns last node of the list
 func (list *LinkedList) Back() *Node {
 	current := list.head
-	for current != nil && current.next != nil {
-		current = current.next
+	for current != nil && current.Next != nil {
+		current = current.Next
 	}
 	return current
 }
@@ -59,7 +54,7 @@ func (list *LinkedList) Append(node *Node) {
 	if list.head == nil {
 		list.head = node
 	} else {
-		list.Back().next = node
+		list.Back().Next = node
 	}
 	list.size++
 }
@@ -69,7 +64,7 @@ func (list *LinkedList) AppendList(newList *LinkedList) {
 	if list.head == nil {
 		list = newList
 	} else {
-		list.Back().next = newList.head
+		list.Back().Next = newList.head
 	}
 	list.size += newList.size
 }
@@ -79,7 +74,7 @@ func (list *LinkedList) Prepend(node *Node) {
 	if list.head == nil {
 		list.head = node
 	} else {
-		node.next = list.head
+		node.Next = list.head
 		list.head = node
 	}
 	list.size++
@@ -87,7 +82,7 @@ func (list *LinkedList) Prepend(node *Node) {
 
 // PrependList appends whole lined list before the head of existing one
 func (list *LinkedList) PrependList(newList *LinkedList) {
-	newList.Back().next = list.head
+	newList.Back().Next = list.head
 	list.head = newList.head
 	list.size += newList.size
 }
@@ -95,11 +90,12 @@ func (list *LinkedList) PrependList(newList *LinkedList) {
 // RemoveLast remove last node from the list and return it
 func (list *LinkedList) RemoveLast() *Node {
 	current := list.head
-	for current.next.next != nil {
-		current = current.next
+	for current.Next.Next != nil {
+		current = current.Next
 	}
-	last := current.next
-	current.next = nil
+
+	last := current.Next
+	current.Next = nil
 	list.size--
 
 	return last
@@ -108,15 +104,15 @@ func (list *LinkedList) RemoveLast() *Node {
 // GetAt returns node of the list at the specified index beginning from 0
 func (list *LinkedList) GetAt(index int) *Node {
 	current := list.head
-	for i := 0; i < index && current.next != nil; i++ {
-		current = current.next
+	for i := 0; i < index && current.Next != nil; i++ {
+		current = current.Next
 	}
 	return current
 }
 
 // Contains returns true if specified node is present in the list
 func (list *LinkedList) Contains(node *Node) bool {
-	for current := list.head; current.next != nil; current = current.next {
+	for current := list.head; current.Next != nil; current = current.Next {
 		if current.Data == node.Data {
 			return true
 		}
