@@ -9,7 +9,6 @@ import (
 	"time"
 
 	ll "Snake/linkedlist"
-	qe "Snake/queue"
 
 	gc "github.com/rthornton128/goncurses"
 )
@@ -32,7 +31,6 @@ var nowhere = &point{0, 0}
 
 var objects = make([]object, 0)
 var events = make(chan string, 1)
-var eventQueue = qe.New()
 var currentFood = &food{}
 
 var maxX = 0
@@ -194,7 +192,6 @@ func handleInput(w *gc.Window, s *snake) {
 		break
 	case 'q':
 		events <- exitEvent
-		eventQueue.PushBack(&ll.Node{Data: exitEvent})
 		break
 	default:
 		break
@@ -212,11 +209,11 @@ func gameOver(s *gc.Window) {
 	gc.Nap(2000)
 }
 
-func drawStats(height int, width int, y int, x int, sn *snake) {
+func drawStats(sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
 	lifes := "lifes: " + strconv.Itoa(3)
 
-	wnd := createWindow(height, width-2, y, x)
+	wnd := createWindow(statsH, statsW-2, statsY, statsX)
 	wnd.MovePrint(1, 1, snakeLength)
 	wnd.MovePrint(1, len(snakeLength)+3, lifes)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
@@ -313,8 +310,6 @@ func main() {
 	objects = append(objects, snake, currentFood)
 	//
 
-	gc.StartColor()
-	gc.InitPair(1, gc.C_BLACK, gc.C_GREEN)
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 
 	//Game Loop:
@@ -323,17 +318,15 @@ func main() {
 
 		select {
 		case <-ticker.C:
-			gc.SlkAttributeOn(gc.ColorPair(1))
 			tick(gameWindow)
 			gameWindow.Refresh()
-			drawStats(statsH, statsW, statsY, statsX, snake)
+			drawStats(snake)
 		case event := <-events:
+			log.Printf("Event occurred: %s", event)
 			if event == collisionEvent {
-				log.Println("Collision occurred")
 				return // exit
 			}
 			if event == exitEvent {
-				log.Println("Exit called")
 				return // exit
 			}
 		}
