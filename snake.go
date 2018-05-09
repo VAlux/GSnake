@@ -176,6 +176,7 @@ func udpateObjects(w *gc.Window) {
 func tick(w *gc.Window) {
 	udpateObjects(w)
 	drawObjects(w)
+	w.Refresh()
 }
 
 func handleInput(w *gc.Window, s *snake) {
@@ -247,7 +248,7 @@ func createSnake(y, x int) *snake {
 
 func generateFood(sn *snake) *food {
 	randX := 1 + rand.Intn(maxX-2)
-	randY := 1 + rand.Intn(maxY-statsH-1)
+	randY := 1 + rand.Intn(maxY-statsH-2)
 	foodPos := &point{y: randY, x: randX}
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
@@ -345,7 +346,6 @@ func main() {
 		case <-ticker.C:
 			handleInput(gameWindow, snake)
 			tick(gameWindow)
-			gameWindow.Refresh()
 			drawStats(snake)
 			handleEvents()
 		}
