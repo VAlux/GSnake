@@ -22,8 +22,9 @@ const emptyTexture = ` `
 //event definitions:
 const collisionEvent = "collision"
 const exitEvent = "exit"
+const foodEatenEvent = "foodEaten"
 
-const initialLength = 10
+const initialLength = 5
 
 //direction definitions:
 var up = &point{-1, 0}
@@ -47,6 +48,11 @@ var statsW = 0
 
 //once it is false - game is over :(
 var isRunning = true
+
+var score = 0
+
+const scorePointValue = 6
+const speedFactor = 8
 
 //======================= Types =======================
 type point struct {
@@ -116,6 +122,7 @@ func (s *snake) update(w *gc.Window) {
 		s.body.Prepend(&ll.Node{Data: point{dy, dx}})
 		newHead.Data.(point).offsetP(offset)
 		*currentFood = *generateFood(s)
+		events <- foodEatenEvent
 	}
 
 	last := s.body.Back()
@@ -223,11 +230,11 @@ func gameOver(s *gc.Window) {
 
 func drawStats(sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
-	lifes := "lifes: " + strconv.Itoa(3)
+	scoredPoints := "score: " + strconv.Itoa(score)
 
 	wnd := createWindow(statsH, statsW-2, statsY, statsX)
 	wnd.MovePrint(1, 1, snakeLength)
-	wnd.MovePrint(1, len(snakeLength)+3, lifes)
+	wnd.MovePrint(1, len(snakeLength)+3, scoredPoints)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
 	wnd.Refresh()
 }
@@ -279,17 +286,22 @@ func openLogFile() *os.File {
 	return logFile
 }
 
-func handleEvents() {
+func handleEvents(s *snake) {
 	select {
 	case event := <-events:
 		log.Printf("Event occurred: %s", event)
+		if event == foodEatenEvent {
+			score += scorePointValue*speedFactor + s.body.Size()
+			log.Printf("Score increased. Current score: %d", score)
+		}
 		if event == collisionEvent {
 			isRunning = false // exit
+			break
 		}
 		if event == exitEvent {
 			isRunning = false // exit
+			break
 		}
-		break
 	default:
 		break
 	}
@@ -319,7 +331,7 @@ func main() {
 	// Basic ncurses setup
 	gc.Cursor(0)
 	gc.Echo(false)
-	gc.HalfDelay(2)
+	gc.HalfDelay(1)
 	//
 
 	rand.Seed(int64(time.Now().Second()))
@@ -330,7 +342,7 @@ func main() {
 	log.Printf("Resolution: %d x %d", maxX, maxY)
 	//
 
-	ticker := time.NewTicker(time.Second / 6)
+	ticker := time.NewTicker(time.Second / speedFactor)
 
 	// Create main game objects
 	snake := createSnake(maxY/2, maxX/2)
@@ -347,7 +359,7 @@ func main() {
 			handleInput(gameWindow, snake)
 			tick(gameWindow)
 			drawStats(snake)
-			handleEvents()
+			handleEvents(snake)
 		}
 	}
 }
