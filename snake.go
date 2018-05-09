@@ -13,26 +13,31 @@ import (
 	gc "github.com/rthornton128/goncurses"
 )
 
+//texture :) definitions:
 const headTexture = `#`
 const tailTexture = `o`
 const foodTexture = `*`
 const emptyTexture = ` `
 
+//event definitions:
 const collisionEvent = "collision"
 const exitEvent = "exit"
 
-const initialLength = 3
+const initialLength = 10
 
+//direction definitions:
 var up = &point{-1, 0}
 var down = &point{1, 0}
 var left = &point{0, -1}
 var right = &point{0, 1}
 var nowhere = &point{0, 0}
 
+//object definitions:
 var objects = make([]object, 0)
 var events = make(chan string, 1)
 var currentFood = &food{}
 
+//window definitions:
 var maxX = 0
 var maxY = 0
 var statsX = 0
@@ -40,6 +45,10 @@ var statsY = 0
 var statsH = 0
 var statsW = 0
 
+//once it is false - game is over :(
+var isRunning = true
+
+//======================= Types =======================
 type point struct {
 	y, x int
 }
@@ -59,6 +68,8 @@ type food struct {
 	position *point
 	color    int
 }
+
+//=====================================================
 
 func (p point) String() string {
 	return fmt.Sprintf("y: %d, x: %d", p.y, p.x)
@@ -267,6 +278,22 @@ func openLogFile() *os.File {
 	return logFile
 }
 
+func handleEvents() {
+	select {
+	case event := <-events:
+		log.Printf("Event occurred: %s", event)
+		if event == collisionEvent {
+			isRunning = false // exit
+		}
+		if event == exitEvent {
+			isRunning = false // exit
+		}
+		break
+	default:
+		break
+	}
+}
+
 func main() {
 	stdscr, err := gc.Init()
 
@@ -313,22 +340,14 @@ func main() {
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 
 	//Game Loop:
-	for {
-		handleInput(gameWindow, snake)
-
+	for isRunning {
 		select {
 		case <-ticker.C:
+			handleInput(gameWindow, snake)
 			tick(gameWindow)
 			gameWindow.Refresh()
 			drawStats(snake)
-		case event := <-events:
-			log.Printf("Event occurred: %s", event)
-			if event == collisionEvent {
-				return // exit
-			}
-			if event == exitEvent {
-				return // exit
-			}
+			handleEvents()
 		}
 	}
 }
