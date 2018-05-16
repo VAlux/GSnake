@@ -24,8 +24,6 @@ const collisionEvent = "collision"
 const exitEvent = "exit"
 const foodEatenEvent = "foodEaten"
 
-const initialLength = 5
-
 //direction definitions:
 var up = &point{-1, 0}
 var down = &point{1, 0}
@@ -48,11 +46,13 @@ var statsW = 0
 
 //once it is false - game is over :(
 var isRunning = true
+var isPaused = false
 
 var score = 0
 
 const scorePointValue = 6
 const speedFactor = 8
+const initialLength = 4
 
 //======================= Types =======================
 type point struct {
@@ -209,6 +209,12 @@ func handleInput(w *gc.Window, s *snake) {
 			s.direction = right
 		}
 		break
+	case 'p':
+		isPaused = !isPaused
+		if isPaused {
+			CreateMenuWindow(w)
+		}
+		break
 	case 'q':
 		events <- exitEvent
 		break
@@ -357,9 +363,11 @@ func main() {
 		select {
 		case <-ticker.C:
 			handleInput(gameWindow, snake)
-			tick(gameWindow)
-			drawStats(snake)
-			handleEvents(snake)
+			if !isPaused {
+				tick(gameWindow)
+				drawStats(snake)
+				handleEvents(snake)
+			}
 		}
 	}
 }
