@@ -11,6 +11,8 @@ import (
 	ll "Snake/linkedlist"
 
 	gc "github.com/rthornton128/goncurses"
+
+	mm "Snake/mainmenu"
 )
 
 //texture :) definitions:
@@ -53,6 +55,8 @@ var score = 0
 const scorePointValue = 6
 const speedFactor = 8
 const initialLength = 4
+
+var mainMenu = &mm.MainMenu{}
 
 //======================= Types =======================
 type point struct {
@@ -211,9 +215,7 @@ func handleInput(w *gc.Window, s *snake) {
 		break
 	case 'p':
 		isPaused = !isPaused
-		if isPaused {
-			CreateMenuWindow(w)
-		}
+		mainMenu.SetVisible(isPaused)
 		break
 	case 'q':
 		events <- exitEvent
@@ -356,7 +358,11 @@ func main() {
 	objects = append(objects, snake, currentFood)
 	//
 
+	// Create in-game windows
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
+	mainMenu = mm.New(gameWindow, []string{"Comtinue", "New Game", "Options", "High Score", "About", "Exit"})
+	defer mainMenu.Free()
+	//
 
 	//Game Loop:
 	for isRunning {
