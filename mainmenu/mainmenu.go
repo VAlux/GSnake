@@ -5,50 +5,42 @@ import (
 )
 
 type MainMenuWindow interface {
-	SetVisible(isVisible bool)
 	Free()
-	eventLoop()
+	HandleInput() bool
 }
 
 type MainMenu struct {
 	window    *gc.Window
 	menu      *gc.Menu
 	menuItems []*gc.MenuItem
-	isVisible bool
-}
-
-func (m *MainMenu) SetVisible(isVisible bool) {
-	m.isVisible = isVisible
-	if isVisible {
-		go m.eventLoop()
-	}
 }
 
 func (m *MainMenu) Free() {
+	m.menu.UnPost()
 	for _, item := range m.menuItems {
 		item.Free()
 	}
 	m.menu.Free()
+	m.window.Erase()
+	m.window.Refresh()
+	m.window.Delete()
 }
 
-func (m *MainMenu) eventLoop() {
+func (m *MainMenu) HandleInput() bool {
 	m.menu.Post()
-	defer m.menu.UnPost()
-	m.window.Refresh()
+	gc.Update()
+	ch := m.window.GetChar()
 
-	for m.isVisible {
-		gc.Update()
-		ch := m.window.GetChar()
-
-		switch ch {
-		case 'q':
-			return
-		case gc.KEY_DOWN:
-			m.menu.Driver(gc.REQ_DOWN)
-		case gc.KEY_UP:
-			m.menu.Driver(gc.REQ_UP)
-		}
+	switch ch {
+	case 'q':
+		return false
+	case gc.KEY_DOWN:
+		m.menu.Driver(gc.REQ_DOWN)
+	case gc.KEY_UP:
+		m.menu.Driver(gc.REQ_UP)
 	}
+	m.window.Refresh()
+	return true
 }
 
 func New(stdscr *gc.Window, options []string) *MainMenu {

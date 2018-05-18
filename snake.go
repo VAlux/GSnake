@@ -215,7 +215,9 @@ func handleInput(w *gc.Window, s *snake) {
 		break
 	case 'p':
 		isPaused = !isPaused
-		mainMenu.SetVisible(isPaused)
+		if isPaused {
+			mainMenu = mm.New(w, []string{"Comtinue", "New Game", "Options", "High Score", "About", "Exit"})
+		}
 		break
 	case 'q':
 		events <- exitEvent
@@ -360,19 +362,22 @@ func main() {
 
 	// Create in-game windows
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
-	mainMenu = mm.New(gameWindow, []string{"Comtinue", "New Game", "Options", "High Score", "About", "Exit"})
-	defer mainMenu.Free()
 	//
 
 	//Game Loop:
 	for isRunning {
 		select {
 		case <-ticker.C:
-			handleInput(gameWindow, snake)
 			if !isPaused {
+				handleInput(gameWindow, snake)
 				tick(gameWindow)
 				drawStats(snake)
 				handleEvents(snake)
+			} else {
+				if !mainMenu.HandleInput() {
+					isPaused = false
+					mainMenu.Free()
+				}
 			}
 		}
 	}
