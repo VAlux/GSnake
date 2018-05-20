@@ -15,30 +15,35 @@ import (
 	mm "Snake/mainmenu"
 )
 
-//texture :) definitions:
+//======================= texture :) definitions =======================
+
 const headTexture = `#`
 const tailTexture = `o`
 const foodTexture = `*`
 const emptyTexture = ` `
 
-//event definitions:
+//======================= event definitions =======================
+
 const collisionEvent = "collision"
 const exitEvent = "exit"
 const foodEatenEvent = "foodEaten"
 
-//direction definitions:
+//======================= direction definitions =======================
+
 var up = &point{-1, 0}
 var down = &point{1, 0}
 var left = &point{0, -1}
 var right = &point{0, 1}
 var nowhere = &point{0, 0}
 
-//object definitions:
+//======================= object definitions =======================
+
 var objects = make([]object, 0)
 var events = make(chan string, 1)
 var currentFood = &food{}
 
-//window definitions:
+//======================= window definitions =======================
+
 var maxX = 0
 var maxY = 0
 var statsX = 0
@@ -46,8 +51,12 @@ var statsY = 0
 var statsH = 0
 var statsW = 0
 
+//==================================================================
+
 //once it is false - game is over :(
 var isRunning = true
+
+//Main menu is shown during isPaused = true
 var isPaused = true
 
 var score = 0
@@ -55,6 +64,8 @@ var score = 0
 const scorePointValue = 6
 const speedFactor = 8
 const initialLength = 4
+
+//======================= Main menu definitions =======================
 
 var mainMenu = &mm.MainMenu{}
 
@@ -208,14 +219,14 @@ func drawObjects(s *gc.Window) {
 	}
 }
 
-func udpateObjects(w *gc.Window) {
+func updateObjects(w *gc.Window) {
 	for _, obj := range objects {
 		obj.update(w)
 	}
 }
 
 func tick(w *gc.Window) {
-	udpateObjects(w)
+	updateObjects(w)
 	drawObjects(w)
 	w.Refresh()
 }
@@ -421,6 +432,7 @@ func main() {
 	log.Printf("Resolution: %d x %d", maxX, maxY)
 	//
 
+	// Check the resolution and exit if the terminal window is too small
 	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
 		log.Print("Too small game window. Program will exit")
 		log.Print("Recommended resolution is 60x25")
