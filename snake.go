@@ -92,12 +92,12 @@ var menuOptionsKeySet = &[]mm.MenuItemContent{
 	mm.MenuItemContent{MenuItemTitle: exitMenuItemTitle, MenuItemDescription: exitMenuItemDescription}}
 
 var menuOptionsHandlerMap = &map[string]mm.MenuItemHandlerFunction{
-	continueMenuItemTitle:  continueOptionHanler,
-	newGameMenuItemTitle:   newGameOptionHanler,
-	optionsMenuItemTitle:   optionsOptionHanler,
-	highScoreMenuItemTitle: highScoreOptionHanler,
-	aboutMenuItemTitle:     aboutOptionHanler,
-	exitMenuItemTitle:      exitOptionHanler}
+	continueMenuItemTitle:  continueOptionHandler,
+	newGameMenuItemTitle:   newGameOptionHandler,
+	optionsMenuItemTitle:   optionsOptionHandler,
+	highScoreMenuItemTitle: highScoreOptionHandler,
+	aboutMenuItemTitle:     aboutOptionHandler,
+	exitMenuItemTitle:      exitOptionHandler}
 
 //======================= Types =======================
 type point struct {
@@ -364,32 +364,32 @@ func handleEvents(s *snake) {
 
 //======================= Main Menu Handlers  =======================
 
-func continueOptionHanler() bool {
+func continueOptionHandler() bool {
 	log.Print("Continue menu option selected")
 	return false
 }
 
-func newGameOptionHanler() bool {
+func newGameOptionHandler() bool {
 	log.Print("New Game  menu option selected")
 	return true
 }
 
-func optionsOptionHanler() bool {
+func optionsOptionHandler() bool {
 	log.Print("Options menu option selected")
 	return true
 }
 
-func highScoreOptionHanler() bool {
+func highScoreOptionHandler() bool {
 	log.Print("High Score menu option selected")
 	return true
 }
 
-func aboutOptionHanler() bool {
+func aboutOptionHandler() bool {
 	log.Print("About menu option selected")
 	return true
 }
 
-func exitOptionHanler() bool {
+func exitOptionHandler() bool {
 	log.Print("Exit menu option selected")
 	events <- exitEvent
 	return false
