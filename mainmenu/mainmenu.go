@@ -6,9 +6,13 @@ import (
 	gc "github.com/rthornton128/goncurses"
 )
 
+// MenuWindowWidth defined the width of the menu window in characters
+const MenuWindowWidth = 55
+
+// MenuWindowHeight defined the height of the menu window in characters
+const MenuWindowHeight = 10
+
 const menuTitle = "Main Menu"
-const menuWindowWidth = 40
-const menuWindowHeight = 10
 
 // MenuWindow interface for interaction with MainMenu type
 type MenuWindow interface {
@@ -23,6 +27,12 @@ type MainMenu struct {
 	menu              *gc.Menu
 	menuItems         []*gc.MenuItem
 	optionsHanlersMap map[string]MenuItemHandlerFunction
+}
+
+// MenuItemContent describes the title and description of the menu item
+type MenuItemContent struct {
+	MenuItemTitle       string
+	MenuItemDescription string
 }
 
 // MenuItemHandlerFunction represents an action point on the particular menu item
@@ -64,24 +74,18 @@ func (m *MainMenu) HandleInput() bool {
 }
 
 // New creates new instance of main menu nested in specified Window with specified option items
-func New(stdscr *gc.Window, optionsHanlersMap *map[string]MenuItemHandlerFunction) *MainMenu {
+func New(
+	stdscr *gc.Window,
+	items *[]MenuItemContent,
+	handlers *map[string]MenuItemHandlerFunction) *MainMenu {
+
 	menu := new(MainMenu)
-	menu.init(stdscr, extractKeys(*optionsHanlersMap))
-	menu.optionsHanlersMap = *optionsHanlersMap
+	menu.init(stdscr, *items)
+	menu.optionsHanlersMap = *handlers
 	return menu
 }
 
-func extractKeys(m map[string]MenuItemHandlerFunction) []string {
-	keys := make([]string, len(m))
-	index := 0
-	for key := range m {
-		keys[index] = key
-		index++
-	}
-	return keys
-}
-
-func (m *MainMenu) init(stdscr *gc.Window, options []string) {
+func (m *MainMenu) init(stdscr *gc.Window, options []MenuItemContent) {
 	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
 
 	m.menuItems = make([]*gc.MenuItem, len(options))
@@ -89,17 +93,17 @@ func (m *MainMenu) init(stdscr *gc.Window, options []string) {
 	maxY, maxX := stdscr.MaxYX()
 
 	for index, item := range options {
-		m.menuItems[index], _ = gc.NewItem(item, "")
+		m.menuItems[index], _ = gc.NewItem(item.MenuItemTitle, item.MenuItemDescription)
 	}
 
 	menu, _ := gc.NewMenu(m.menuItems)
 
 	// Centrized relative to game-window
-	menuWindow, _ := gc.NewWindow(menuWindowHeight, menuWindowWidth, maxY/2-5, maxX/2-20)
+	menuWindow, _ := gc.NewWindow(MenuWindowHeight, MenuWindowWidth, maxY/2-5, maxX/2-30)
 	menuWindow.Keypad(true)
 
 	menu.SetWindow(menuWindow)
-	derWin := menuWindow.Derived(6, 38, 3, 1)
+	derWin := menuWindow.Derived(6, 52, 3, 1)
 	menu.SubWindow(derWin)
 	menu.Mark(" => ")
 

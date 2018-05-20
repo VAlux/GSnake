@@ -48,7 +48,7 @@ var statsW = 0
 
 //once it is false - game is over :(
 var isRunning = true
-var isPaused = false
+var isPaused = true
 
 var score = 0
 
@@ -58,14 +58,35 @@ const initialLength = 4
 
 var mainMenu = &mm.MainMenu{}
 
-const comtinueMenuOption = "Comtinue"
-const newGameMenuOption = "New Game"
-const optionsMenuOption = "Options"
-const highScoreMenuOption = "High Score"
-const aboutMenuOption = "About"
-const exitMenuOption = "Exit"
+const continueMenuItemTitle = "Continue"
+const newGameMenuItemTitle = "New Game"
+const optionsMenuItemTitle = "Options"
+const highScoreMenuItemTitle = "High Score"
+const aboutMenuItemTitle = "About"
+const exitMenuItemTitle = "Exit"
 
-var menuOptionsHandlerMap = make(map[string]mm.MenuItemHandlerFunction)
+const continueMenuItemDescription = " -- Resume current game"
+const newGameMenuItemDescription = " -- Begin new game"
+const optionsMenuItemDescription = " -- Review or change game settings"
+const highScoreMenuItemDescription = " -- See the leadership table"
+const aboutMenuItemDescription = " -- Info about creator"
+const exitMenuItemDescription = " -- Save score and close the game"
+
+var menuOptionsKeySet = &[]mm.MenuItemContent{
+	mm.MenuItemContent{MenuItemTitle: continueMenuItemTitle, MenuItemDescription: continueMenuItemDescription},
+	mm.MenuItemContent{MenuItemTitle: newGameMenuItemTitle, MenuItemDescription: newGameMenuItemDescription},
+	mm.MenuItemContent{MenuItemTitle: optionsMenuItemTitle, MenuItemDescription: optionsMenuItemDescription},
+	mm.MenuItemContent{MenuItemTitle: highScoreMenuItemTitle, MenuItemDescription: highScoreMenuItemDescription},
+	mm.MenuItemContent{MenuItemTitle: aboutMenuItemTitle, MenuItemDescription: aboutMenuItemDescription},
+	mm.MenuItemContent{MenuItemTitle: exitMenuItemTitle, MenuItemDescription: exitMenuItemDescription}}
+
+var menuOptionsHandlerMap = &map[string]mm.MenuItemHandlerFunction{
+	continueMenuItemTitle:  continueOptionHanler,
+	newGameMenuItemTitle:   newGameOptionHanler,
+	optionsMenuItemTitle:   optionsOptionHanler,
+	highScoreMenuItemTitle: highScoreOptionHanler,
+	aboutMenuItemTitle:     aboutOptionHanler,
+	exitMenuItemTitle:      exitOptionHanler}
 
 //======================= Types =======================
 type point struct {
@@ -225,7 +246,7 @@ func handleInput(w *gc.Window, s *snake) {
 	case 'p':
 		isPaused = !isPaused
 		if isPaused {
-			mainMenu = mm.New(w, &menuOptionsHandlerMap)
+			mainMenu = createMainMenu(w)
 		}
 		break
 	case 'q':
@@ -234,6 +255,10 @@ func handleInput(w *gc.Window, s *snake) {
 	default:
 		break
 	}
+}
+
+func createMainMenu(w *gc.Window) *mm.MainMenu {
+	return mm.New(w, menuOptionsKeySet, menuOptionsHandlerMap)
 }
 
 func gameOver(s *gc.Window) {
@@ -326,10 +351,11 @@ func handleEvents(s *snake) {
 	}
 }
 
-//======================= Main Menu =======================
+//======================= Main Menu Handlers  =======================
+
 func continueOptionHanler() bool {
 	log.Print("Continue menu option selected")
-	return true
+	return false
 }
 
 func newGameOptionHanler() bool {
@@ -358,16 +384,7 @@ func exitOptionHanler() bool {
 	return false
 }
 
-func initMainMenuMap() {
-	menuOptionsHandlerMap[comtinueMenuOption] = continueOptionHanler
-	menuOptionsHandlerMap[newGameMenuOption] = newGameOptionHanler
-	menuOptionsHandlerMap[optionsMenuOption] = optionsOptionHanler
-	menuOptionsHandlerMap[highScoreMenuOption] = highScoreOptionHanler
-	menuOptionsHandlerMap[aboutMenuOption] = aboutOptionHanler
-	menuOptionsHandlerMap[exitMenuOption] = exitOptionHanler
-}
-
-// ========================================================
+// ==================================================================
 
 func main() {
 	stdscr, err := gc.Init()
@@ -404,9 +421,15 @@ func main() {
 	log.Printf("Resolution: %d x %d", maxX, maxY)
 	//
 
+	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
+		log.Print("Too small game window. Program will exit")
+		log.Print("Recommended resolution is 60x25")
+		return
+	}
+
 	ticker := time.NewTicker(time.Second / speedFactor)
 
-	// Create main game objects
+	// Main game objects
 	snake := createSnake(maxY/2, maxX/2)
 	currentFood = generateFood(snake)
 	objects = append(objects, snake, currentFood)
@@ -414,9 +437,8 @@ func main() {
 
 	// Create in-game windows
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
+	mainMenu = createMainMenu(gameWindow)
 	//
-
-	initMainMenuMap()
 
 	//Game Loop:
 	for isRunning {
