@@ -57,13 +57,15 @@ const speedFactor = 8
 const initialLength = 4
 
 var mainMenu = &mm.MainMenu{}
-var mainMenuOptions = &[]string{
-	"Comtinue",
-	"New Game",
-	"Options",
-	"High Score",
-	"About",
-	"Exit"}
+
+const comtinueMenuOption = "Comtinue"
+const newGameMenuOption = "New Game"
+const optionsMenuOption = "Options"
+const highScoreMenuOption = "High Score"
+const aboutMenuOption = "About"
+const exitMenuOption = "Exit"
+
+var menuOptionsHandlerMap = make(map[string]mm.MenuItemHandlerFunction)
 
 //======================= Types =======================
 type point struct {
@@ -223,7 +225,7 @@ func handleInput(w *gc.Window, s *snake) {
 	case 'p':
 		isPaused = !isPaused
 		if isPaused {
-			mainMenu = mm.New(w, mainMenuOptions)
+			mainMenu = mm.New(w, &menuOptionsHandlerMap)
 		}
 		break
 	case 'q':
@@ -324,6 +326,49 @@ func handleEvents(s *snake) {
 	}
 }
 
+//======================= Main Menu =======================
+func continueOptionHanler() bool {
+	log.Print("Continue menu option selected")
+	return true
+}
+
+func newGameOptionHanler() bool {
+	log.Print("New Game  menu option selected")
+	return true
+}
+
+func optionsOptionHanler() bool {
+	log.Print("Options menu option selected")
+	return true
+}
+
+func highScoreOptionHanler() bool {
+	log.Print("High Score menu option selected")
+	return true
+}
+
+func aboutOptionHanler() bool {
+	log.Print("About menu option selected")
+	return true
+}
+
+func exitOptionHanler() bool {
+	log.Print("Exit menu option selected")
+	events <- exitEvent
+	return false
+}
+
+func initMainMenuMap() {
+	menuOptionsHandlerMap[comtinueMenuOption] = continueOptionHanler
+	menuOptionsHandlerMap[newGameMenuOption] = newGameOptionHanler
+	menuOptionsHandlerMap[optionsMenuOption] = optionsOptionHanler
+	menuOptionsHandlerMap[highScoreMenuOption] = highScoreOptionHanler
+	menuOptionsHandlerMap[aboutMenuOption] = aboutOptionHanler
+	menuOptionsHandlerMap[exitMenuOption] = exitOptionHanler
+}
+
+// ========================================================
+
 func main() {
 	stdscr, err := gc.Init()
 
@@ -370,6 +415,8 @@ func main() {
 	// Create in-game windows
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 	//
+
+	initMainMenuMap()
 
 	//Game Loop:
 	for isRunning {

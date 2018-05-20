@@ -1,6 +1,8 @@
 package mainmenu
 
 import (
+	"log"
+
 	gc "github.com/rthornton128/goncurses"
 )
 
@@ -17,10 +19,14 @@ type MenuWindow interface {
 
 // MainMenu contains all of the ncurses main-menu realted stuff
 type MainMenu struct {
-	window    *gc.Window
-	menu      *gc.Menu
-	menuItems []*gc.MenuItem
+	window            *gc.Window
+	menu              *gc.Menu
+	menuItems         []*gc.MenuItem
+	optionsHanlersMap map[string]MenuItemHandlerFunction
 }
+
+// MenuItemHandlerFunction represents an action point on the particular menu item
+type MenuItemHandlerFunction func() bool
 
 // Free removes the menu, clear it from the screen and free the resources
 func (m *MainMenu) Free() {
@@ -47,16 +53,32 @@ func (m *MainMenu) HandleInput() bool {
 		m.menu.Driver(gc.REQ_DOWN)
 	case gc.KEY_UP:
 		m.menu.Driver(gc.REQ_UP)
+	case gc.KEY_RETURN:
+		current := m.menu.Current(nil).Name()
+		return m.optionsHanlersMap[current]()
+	default:
+		log.Printf("Unknown key pressed in Main Menu: %d", ch)
 	}
 	m.window.Refresh()
 	return true
 }
 
 // New creates new instance of main menu nested in specified Window with specified option items
-func New(stdscr *gc.Window, options *[]string) *MainMenu {
+func New(stdscr *gc.Window, optionsHanlersMap *map[string]MenuItemHandlerFunction) *MainMenu {
 	menu := new(MainMenu)
-	menu.init(stdscr, *options)
+	menu.init(stdscr, extractKeys(*optionsHanlersMap))
+	menu.optionsHanlersMap = *optionsHanlersMap
 	return menu
+}
+
+func extractKeys(m map[string]MenuItemHandlerFunction) []string {
+	keys := make([]string, len(m))
+	index := 0
+	for key := range m {
+		keys[index] = key
+		index++
+	}
+	return keys
 }
 
 func (m *MainMenu) init(stdscr *gc.Window, options []string) {
