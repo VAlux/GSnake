@@ -57,6 +57,13 @@ const speedFactor = 8
 const initialLength = 4
 
 var mainMenu = &mm.MainMenu{}
+var mainMenuOptions = &[]string{
+	"Comtinue",
+	"New Game",
+	"Options",
+	"High Score",
+	"About",
+	"Exit"}
 
 //======================= Types =======================
 type point struct {
@@ -216,7 +223,7 @@ func handleInput(w *gc.Window, s *snake) {
 	case 'p':
 		isPaused = !isPaused
 		if isPaused {
-			mainMenu = mm.New(w, []string{"Comtinue", "New Game", "Options", "High Score", "About", "Exit"})
+			mainMenu = mm.New(w, mainMenuOptions)
 		}
 		break
 	case 'q':
@@ -264,8 +271,8 @@ func createSnake(y, x int) *snake {
 }
 
 func generateFood(sn *snake) *food {
-	randX := 1 + rand.Intn(maxX-2)
-	randY := 1 + rand.Intn(maxY-statsH-2)
+	randX := 1 + rand.Intn(maxX-3)
+	randY := 1 + rand.Intn(maxY-statsH-3)
 	foodPos := &point{y: randY, x: randX}
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
