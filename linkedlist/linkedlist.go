@@ -69,7 +69,7 @@ func (list *LinkedList) AppendList(newList *LinkedList) {
 	list.size += newList.size
 }
 
-// Prepend adds node before the first elemnt of the list
+// Prepend adds node before the first element of the list
 func (list *LinkedList) Prepend(node *Node) {
 	if list.head == nil {
 		list.head = node

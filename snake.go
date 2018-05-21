@@ -27,6 +27,10 @@ const emptyTexture = ` `
 const collisionEvent = "collision"
 const exitEvent = "exit"
 const foodEatenEvent = "foodEaten"
+const newGameEvent = "newGame"
+const optionsEvent = "options"
+const highScoreEvent = "highScore"
+const aboutEvent = "about"
 
 //======================= direction definitions =======================
 
@@ -41,6 +45,7 @@ var nowhere = &point{0, 0}
 var objects = make([]object, 0)
 var events = make(chan string, 1)
 var currentFood = &food{}
+var playerSnake = &snake{}
 
 //======================= window definitions =======================
 
@@ -353,7 +358,19 @@ func openLogFile() *os.File {
 	return logFile
 }
 
-func handleEvents(s *snake) {
+func newGame(w *gc.Window, headY int, headX int) {
+	log.Print("Starting new game...")
+	playerSnake = createSnake(headY, headX)
+	currentFood = generateFood(playerSnake)
+	objects = make([]object, 0)
+	objects = append(objects, playerSnake, currentFood)
+	score = 0
+	w.Erase()
+	w.Box(gc.ACS_VLINE, gc.ACS_HLINE)
+	w.Refresh()
+}
+
+func handleEvents(s *snake, w *gc.Window) {
 	select {
 	case event := <-events:
 		log.Printf("Event occurred: %s", event)
@@ -369,12 +386,16 @@ func handleEvents(s *snake) {
 			isRunning = false // exit
 			break
 		}
+		if event == newGameEvent {
+			newGame(w, maxY/2, maxX/2)
+			break
+		}
 	default:
 		break
 	}
 }
 
-//======================= Main Menu Handlers  =======================
+//======================= Main Menu Handlers =======================
 
 func continueOptionHandler() bool {
 	log.Print("Continue menu option selected")
@@ -382,22 +403,26 @@ func continueOptionHandler() bool {
 }
 
 func newGameOptionHandler() bool {
-	log.Print("New Game  menu option selected")
-	return true
+	log.Print("New Game menu option selected")
+	events <- newGameEvent
+	return false
 }
 
 func optionsOptionHandler() bool {
 	log.Print("Options menu option selected")
+	events <- optionsEvent
 	return true
 }
 
 func highScoreOptionHandler() bool {
 	log.Print("High Score menu option selected")
+	events <- highScoreEvent
 	return true
 }
 
 func aboutOptionHandler() bool {
 	log.Print("About menu option selected")
+	events <- aboutEvent
 	return true
 }
 
@@ -405,6 +430,33 @@ func exitOptionHandler() bool {
 	log.Print("Exit menu option selected")
 	events <- exitEvent
 	return false
+}
+
+//======================= Initialization =======================
+
+func initNcurses() {
+	// Coloring setup
+	gc.StartColor()
+	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
+	gc.InitPair(2, gc.C_GREEN, gc.C_BLACK)
+	gc.InitPair(3, gc.C_YELLOW, gc.C_BLACK)
+
+	gc.Cursor(0)
+	gc.Echo(false)
+	gc.Raw(true)
+	gc.HalfDelay(1)
+}
+
+func initScreenDimensions(stdscr *gc.Window) {
+	maxY, maxX = stdscr.MaxYX()
+	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
+	log.Printf("Resolution: %d x %d", maxX, maxY)
+}
+
+func initLogging() *os.File {
+	logFile := openLogFile()
+	log.SetOutput(logFile)
+	return logFile
 }
 
 // ==================================================================
@@ -416,19 +468,8 @@ func main() {
 		log.Println("Error during ncurses Init:", err)
 	}
 
-	gc.Raw(true)
-
-	// Coloring setup
-	gc.StartColor()
-	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
-	gc.InitPair(2, gc.C_GREEN, gc.C_BLACK)
-	gc.InitPair(3, gc.C_YELLOW, gc.C_BLACK)
-	//
-
-	// Logging setup
-	logFile := openLogFile()
-	log.SetOutput(logFile)
-	//
+	rand.Seed(int64(time.Now().Second()))
+	logFile := initLogging()
 
 	// Finalization
 	defer logFile.Close()
@@ -438,20 +479,8 @@ func main() {
 	//
 
 	log.Println(" ====> Game session started")
-
-	// Basic ncurses setup
-	gc.Cursor(0)
-	gc.Echo(false)
-	gc.HalfDelay(1)
-	//
-
-	rand.Seed(int64(time.Now().Second()))
-
-	// Screen dimensions initialization
-	maxY, maxX = stdscr.MaxYX()
-	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
-	log.Printf("Resolution: %d x %d", maxX, maxY)
-	//
+	initNcurses()
+	initScreenDimensions(stdscr)
 
 	// Check the resolution and exit if the terminal window is too small
 	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
@@ -462,26 +491,22 @@ func main() {
 
 	ticker := time.NewTicker(time.Second / speedFactor)
 
-	// Main game objects
-	snake := createSnake(maxY/2, maxX/2)
-	currentFood = generateFood(snake)
-	objects = append(objects, snake, currentFood)
-	//
-
 	// Create in-game windows
 	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
 	mainMenu = createMainMenu(gameWindow)
 	//
+
+	newGame(gameWindow, maxY/2, maxX/2)
 
 	//Game Loop:
 	for isRunning {
 		select {
 		case <-ticker.C:
 			if !isPaused {
-				handleInput(gameWindow, snake)
+				handleInput(gameWindow, playerSnake)
 				tick(gameWindow)
-				drawStats(snake)
-				handleEvents(snake)
+				drawStats(playerSnake)
+				handleEvents(playerSnake, gameWindow)
 			} else {
 				if !mainMenu.HandleInput() {
 					isPaused = false

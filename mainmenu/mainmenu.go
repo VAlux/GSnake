@@ -1,8 +1,6 @@
 package mainmenu
 
 import (
-	"log"
-
 	gc "github.com/rthornton128/goncurses"
 )
 
@@ -69,7 +67,7 @@ func (m *MainMenu) HandleInput() bool {
 		current := m.menu.Current(nil).Name()
 		return m.optionsHandlersMap[current]()
 	default:
-		log.Printf("Unknown key pressed in Main Menu: %d", ch)
+		break
 	}
 	m.window.Refresh()
 	return true
