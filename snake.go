@@ -51,7 +51,7 @@ var statsY = 0
 var statsH = 0
 var statsW = 0
 
-//==================================================================
+//========================= Gameplay definitions =========================
 
 //once it is false - game is over :(
 var isRunning = true
@@ -178,12 +178,14 @@ func (s *snake) update(w *gc.Window) {
 }
 
 func (s *snake) draw(w *gc.Window) {
-	w.ColorOn(1)
+	w.ColorOn(2)
+	w.AttrOn(gc.A_BOLD)
 	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
 	for node := s.head.Next; node.Next != nil; node = node.Next {
 		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
 	}
-	w.ColorOff(1)
+	w.AttrOff(gc.A_BOLD)
+	w.ColorOff(2)
 }
 
 func (s *snake) checkCollision(n *ll.Node) bool {
@@ -212,7 +214,11 @@ func (f *food) update(w *gc.Window) {
 }
 
 func (f *food) draw(w *gc.Window) {
+	w.ColorOn(1)
+	w.AttrOn(gc.A_BOLD)
 	w.MovePrint(f.position.y, f.position.x, foodTexture)
+	w.AttrOff(gc.A_BOLD)
+	w.ColorOff(1)
 }
 
 func drawObjects(s *gc.Window) {
@@ -290,8 +296,12 @@ func drawStats(sn *snake) {
 	scoredPoints := "score: " + strconv.Itoa(score)
 
 	wnd := createWindow(statsH, statsW-2, statsY, statsX)
+	wnd.ColorOn(3)
+	wnd.AttrOn(gc.A_BOLD)
 	wnd.MovePrint(1, 1, snakeLength)
 	wnd.MovePrint(1, len(snakeLength)+3, scoredPoints)
+	wnd.ColorOff(3)
+	wnd.AttrOff(gc.A_BOLD)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
 	wnd.Refresh()
 }
@@ -406,9 +416,14 @@ func main() {
 		log.Println("Error during ncurses Init:", err)
 	}
 
-	gc.StartColor()
 	gc.Raw(true)
+
+	// Coloring setup
+	gc.StartColor()
 	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
+	gc.InitPair(2, gc.C_GREEN, gc.C_BLACK)
+	gc.InitPair(3, gc.C_YELLOW, gc.C_BLACK)
+	//
 
 	// Logging setup
 	logFile := openLogFile()
