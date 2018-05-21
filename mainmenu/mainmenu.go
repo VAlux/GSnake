@@ -23,10 +23,10 @@ type MenuWindow interface {
 
 // MainMenu contains all of the ncurses main-menu realted stuff
 type MainMenu struct {
-	window            *gc.Window
-	menu              *gc.Menu
-	menuItems         []*gc.MenuItem
-	optionsHanlersMap map[string]MenuItemHandlerFunction
+	window             *gc.Window
+	menu               *gc.Menu
+	menuItems          []*gc.MenuItem
+	optionsHandlersMap map[string]MenuItemHandlerFunction
 }
 
 // MenuItemContent describes the title and description of the menu item
@@ -65,7 +65,7 @@ func (m *MainMenu) HandleInput() bool {
 		m.menu.Driver(gc.REQ_UP)
 	case gc.KEY_RETURN:
 		current := m.menu.Current(nil).Name()
-		return m.optionsHanlersMap[current]()
+		return m.optionsHandlersMap[current]()
 	default:
 		log.Printf("Unknown key pressed in Main Menu: %d", ch)
 	}
@@ -81,7 +81,7 @@ func New(
 
 	menu := new(MainMenu)
 	menu.init(stdscr, *items)
-	menu.optionsHanlersMap = *handlers
+	menu.optionsHandlersMap = *handlers
 	return menu
 }
 
@@ -98,7 +98,7 @@ func (m *MainMenu) init(stdscr *gc.Window, options []MenuItemContent) {
 
 	menu, _ := gc.NewMenu(m.menuItems)
 
-	// Centrized relative to game-window
+	// Centered relative to game-window
 	menuWindow, _ := gc.NewWindow(MenuWindowHeight, MenuWindowWidth, maxY/2-5, maxX/2-30)
 	menuWindow.Keypad(true)
 
