@@ -21,12 +21,14 @@ type MenuWindow interface {
 	init()
 }
 
+type menuItemHandlerMap = map[string]MenuItemHandlerFunction
+
 // MainMenu contains all of the ncurses main-menu realted stuff
 type MainMenu struct {
 	window             *gc.Window
 	menu               *gc.Menu
 	menuItems          []*gc.MenuItem
-	optionsHandlersMap map[string]MenuItemHandlerFunction
+	optionsHandlersMap menuItemHandlerMap
 }
 
 // MenuItemContent describes the title and description of the menu item
@@ -74,11 +76,7 @@ func (m *MainMenu) HandleInput() bool {
 }
 
 // New creates new instance of main menu nested in specified Window with specified option items
-func New(
-	stdscr *gc.Window,
-	items *[]MenuItemContent,
-	handlers *map[string]MenuItemHandlerFunction) *MainMenu {
-
+func New(stdscr *gc.Window, items *[]MenuItemContent, handlers *menuItemHandlerMap) *MainMenu {
 	menu := new(MainMenu)
 	menu.init(stdscr, *items)
 	menu.optionsHandlersMap = *handlers

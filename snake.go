@@ -178,10 +178,12 @@ func (s *snake) update(w *gc.Window) {
 }
 
 func (s *snake) draw(w *gc.Window) {
+	w.ColorOn(1)
 	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
 	for node := s.head.Next; node.Next != nil; node = node.Next {
 		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
 	}
+	w.ColorOff(1)
 }
 
 func (s *snake) checkCollision(n *ll.Node) bool {
@@ -403,6 +405,10 @@ func main() {
 	if err != nil {
 		log.Println("Error during ncurses Init:", err)
 	}
+
+	gc.StartColor()
+	gc.Raw(true)
+	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
 
 	// Logging setup
 	logFile := openLogFile()
