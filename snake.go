@@ -14,6 +14,8 @@ import (
 	gc "github.com/rthornton128/goncurses"
 
 	mm "Snake/mainmenu"
+
+	hc "Snake/highscore"
 )
 
 //======================= texture :) definitions =======================
@@ -482,6 +484,7 @@ func main() {
 	defer logFile.Close()
 	defer gc.End()
 	defer gameOver(stdscr)
+	defer hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 	defer log.Println(" <==== Game session ended")
 	//
 

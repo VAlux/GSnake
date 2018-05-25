@@ -18,14 +18,17 @@ type HighScore struct {
 	PlayerName string
 }
 
+// HighScores represents a slice of HighScore entries
+type HighScores []HighScore
+
 func initialize() {
 	gob.Register(HighScore{})
 }
 
-func serialize(score *HighScore) ([]byte, error) {
-	var buffer bytes.Buffer
+func serialize(scores *HighScores) ([]byte, error) {
+	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(*score)
+	err := encoder.Encode(*scores)
 	if err != nil {
 		log.Panic("Error serialization high score:", err)
 		return nil, err
@@ -33,8 +36,8 @@ func serialize(score *HighScore) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func deSerialize(file *os.File) (*HighScore, error) {
-	score := &HighScore{}
+func deSerialize(file *os.File) (*HighScores, error) {
+	score := new(HighScores)
 	decoder := gob.NewDecoder(file)
 	err := decoder.Decode(score)
 	if err != nil {
@@ -46,7 +49,10 @@ func deSerialize(file *os.File) (*HighScore, error) {
 
 // Save writes high score structure to file
 func Save(score *HighScore) {
-	payload, serializeError := serialize(score)
+	currentScores, _ := Load()
+	currentScores = append(currentScores, *score)
+
+	payload, serializeError := serialize(&currentScores)
 	if serializeError != nil {
 		log.Panic("Error saving high score to file:", serializeError)
 		return
@@ -62,17 +68,17 @@ func Save(score *HighScore) {
 }
 
 // Load reads high score structure from file
-func Load() (*HighScore, error) {
+func Load() (HighScores, error) {
 	log.Printf("Loading high score from file: %s", highScoreFilename)
 	file, readError := os.Open(highScoreFilename)
 	if readError != nil {
 		return nil, readError
 	}
 
-	score, deSerializeError := deSerialize(file)
+	scores, deSerializeError := deSerialize(file)
 	if deSerializeError != nil {
 		return nil, readError
 	}
 
-	return score, nil
+	return *scores, nil
 }
