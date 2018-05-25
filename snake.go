@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -447,10 +448,16 @@ func initNcurses() {
 	gc.HalfDelay(1)
 }
 
-func initScreenDimensions(stdscr *gc.Window) {
+func initScreenDimensions(stdscr *gc.Window) error {
 	maxY, maxX = stdscr.MaxYX()
 	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
 	log.Printf("Resolution: %d x %d", maxX, maxY)
+	// Check the resolution and exit if the terminal window is too small
+	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
+		log.Print("Recommended resolution is 60x25")
+		return errors.New("Too small game window. Program will exit")
+	}
+	return nil
 }
 
 func initLogging() *os.File {
@@ -465,7 +472,7 @@ func main() {
 	stdscr, err := gc.Init()
 
 	if err != nil {
-		log.Println("Error during ncurses Init:", err)
+		log.Panicln("Error during ncurses Init: ", err)
 	}
 
 	rand.Seed(int64(time.Now().Second()))
@@ -480,12 +487,10 @@ func main() {
 
 	log.Println(" ====> Game session started")
 	initNcurses()
-	initScreenDimensions(stdscr)
 
-	// Check the resolution and exit if the terminal window is too small
-	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
-		log.Print("Too small game window. Program will exit")
-		log.Print("Recommended resolution is 60x25")
+	dimensionsInitError := initScreenDimensions(stdscr)
+	if dimensionsInitError != nil {
+		log.Panicln("Error initializing the screen dimensions:", dimensionsInitError)
 		return
 	}
 
