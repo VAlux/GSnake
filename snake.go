@@ -199,7 +199,7 @@ func (s *snake) draw(w *gc.Window) {
 func (s *snake) checkCollision(n *ll.Node) bool {
 	return n.Data.(point).x <= 0 ||
 		n.Data.(point).y <= 0 ||
-		n.Data.(point).x >= maxX-1 ||
+		n.Data.(point).x >= maxX-3 ||
 		n.Data.(point).y >= maxY-statsH-1 ||
 		s.body.Contains(n)
 }
@@ -378,7 +378,7 @@ func handleEvents(s *snake, w *gc.Window) {
 	case event := <-events:
 		log.Printf("Event occurred: %s", event)
 		if event == foodEatenEvent {
-			score += scorePointValue*speedFactor + s.body.Size()
+			score += (scorePointValue*speedFactor + s.body.Size()) * maxX / maxY
 			log.Printf("Score increased. Current score: %d", score)
 		}
 		if event == collisionEvent {
@@ -484,8 +484,8 @@ func main() {
 	defer logFile.Close()
 	defer gc.End()
 	defer gameOver(stdscr)
-	defer hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 	defer log.Println(" <==== Game session ended")
+	defer hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 	//
 
 	log.Println(" ====> Game session started")

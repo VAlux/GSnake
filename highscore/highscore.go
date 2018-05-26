@@ -2,7 +2,12 @@ package highscore
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/gob"
+	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,6 +15,7 @@ import (
 )
 
 const highScoreFilename = "score.hsc"
+const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
 
 // HighScore represents all of the single high-score entry components
 type HighScore struct {
@@ -58,7 +64,12 @@ func Save(score *HighScore) {
 		return
 	}
 
-	saveError := ioutil.WriteFile(highScoreFilename, payload, 0666)
+	encryptedPayload, encryptionError := encrypt(payload)
+	if encryptionError != nil {
+		log.Panic("Error encryption of the high score payload:", encryptionError)
+	}
+
+	saveError := ioutil.WriteFile(highScoreFilename, encryptedPayload, 0666)
 	if saveError != nil {
 		log.Panic("Error saving high score to file:", saveError)
 		return
@@ -81,4 +92,49 @@ func Load() (HighScores, error) {
 	}
 
 	return *scores, nil
+}
+
+func encrypt(payload []byte) ([]byte, error) {
+	keyBytes := []byte(key)
+	block, chipherCreationError := aes.NewCipher(keyBytes)
+	if chipherCreationError != nil {
+		log.Panic("Error creating cipher:", chipherCreationError)
+		return nil, chipherCreationError
+	}
+
+	encryptedPayload := make([]byte, aes.BlockSize+len(payload))
+	iv := encryptedPayload[:aes.BlockSize]
+
+	_, ivGenerationError := io.ReadFull(rand.Reader, iv)
+	if ivGenerationError != nil {
+		log.Panic("Error generating IV:", ivGenerationError)
+		return nil, ivGenerationError
+	}
+
+	encryptionStream := cipher.NewCFBEncrypter(block, iv)
+	encryptionStream.XORKeyStream(encryptedPayload[aes.BlockSize:], payload)
+
+	return encryptedPayload, nil
+}
+
+func decrypt(payload []byte) ([]byte, error) {
+	keyBytes := []byte(key)
+	block, chipherCreationError := aes.NewCipher(keyBytes)
+	if chipherCreationError != nil {
+		log.Panic("Error creating cipher:", chipherCreationError)
+		return nil, chipherCreationError
+	}
+
+	if len(payload) < aes.BlockSize {
+		log.Panic("Decryption error: High score file is too short")
+		return nil, errors.New("Decryption error: High score file is too short")
+	}
+
+	iv := payload[:aes.BlockSize]
+	encryptedPayload := payload[aes.BlockSize:]
+
+	decryptionStream := cipher.NewCFBDecrypter(block, iv)
+	decryptionStream.XORKeyStream(encryptedPayload, encryptedPayload)
+
+	return encryptedPayload, nil
 }
