@@ -31,6 +31,18 @@ func initialize() {
 	gob.Register(HighScore{})
 }
 
+func (score *HighScore) String() string {
+	return score.Timestamp.String() + " :: " + score.PlayerName + " :: " + string(score.Score)
+}
+
+func (scores *HighScores) String() string {
+	content := ""
+	for _, score := range *scores {
+		content += score.String() + "\n"
+	}
+	return content
+}
+
 func serialize(scores *HighScores) ([]byte, error) {
 	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)
@@ -43,8 +55,20 @@ func serialize(scores *HighScores) ([]byte, error) {
 }
 
 func deSerialize(file *os.File) (*HighScores, error) {
+	content, readingError := ioutil.ReadAll(file)
+	if readingError != nil {
+		log.Panic("Error reading contents from file:", readingError)
+		return nil, readingError
+	}
+
+	decrypted, decryptionError := decrypt(content)
+	if decryptionError != nil {
+		log.Panic("Error decrypting high score contents:", decryptionError)
+		return nil, decryptionError
+	}
+
 	score := new(HighScores)
-	decoder := gob.NewDecoder(file)
+	decoder := gob.NewDecoder(bytes.NewReader(decrypted))
 	err := decoder.Decode(score)
 	if err != nil {
 		log.Panic("Error de-serializing high score:", err)
@@ -57,6 +81,8 @@ func deSerialize(file *os.File) (*HighScores, error) {
 func Save(score *HighScore) {
 	currentScores, _ := Load()
 	currentScores = append(currentScores, *score)
+
+	log.Println("Saving current high scores: " + currentScores.String())
 
 	payload, serializeError := serialize(&currentScores)
 	if serializeError != nil {
@@ -126,8 +152,9 @@ func decrypt(payload []byte) ([]byte, error) {
 	}
 
 	if len(payload) < aes.BlockSize {
-		log.Panic("Decryption error: High score file is too short")
-		return nil, errors.New("Decryption error: High score file is too short")
+		errorMessage := "High score file is too short"
+		log.Panic("Decryption error:", errorMessage)
+		return nil, errors.New(errorMessage)
 	}
 
 	iv := payload[:aes.BlockSize]
