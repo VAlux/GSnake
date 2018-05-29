@@ -346,6 +346,12 @@ func createWindow(height, width, y, x int) *gc.Window {
 	return wnd
 }
 
+func removeWindow(wnd *gc.Window) {
+	wnd.Erase()
+	wnd.Refresh()
+	wnd.Delete()
+}
+
 func createGameWindow(y, x, height, width int) *gc.Window {
 	wnd := createWindow(height, width, y, x)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
@@ -393,6 +399,9 @@ func handleEvents(s *snake, w *gc.Window) {
 			newGame(w, maxY/2, maxX/2)
 			break
 		}
+		if event == highScoreEvent {
+			hc.CreateHighScoreWindow(w)
+		}
 	default:
 		break
 	}
@@ -420,7 +429,7 @@ func optionsOptionHandler() bool {
 func highScoreOptionHandler() bool {
 	log.Print("High Score menu option selected")
 	events <- highScoreEvent
-	return true
+	return false
 }
 
 func aboutOptionHandler() bool {
@@ -485,10 +494,9 @@ func main() {
 	defer gc.End()
 	defer gameOver(stdscr)
 	defer log.Println(" <==== Game session ended")
-	defer hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 	//
 
-	log.Println(" ====> Game session started")
+	log.Println("\n====> Game session started")
 	initNcurses()
 
 	dimensionsInitError := initScreenDimensions(stdscr)
@@ -523,4 +531,6 @@ func main() {
 			}
 		}
 	}
+
+	hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 }

@@ -11,7 +11,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	t "time"
+
+	gc "github.com/rthornton128/goncurses"
 )
 
 const highScoreFilename = "score.hsc"
@@ -32,7 +35,7 @@ func initialize() {
 }
 
 func (score *HighScore) String() string {
-	return score.Timestamp.String() + " :: " + score.PlayerName + " :: " + string(score.Score)
+	return score.Timestamp.String() + " :: " + score.PlayerName + " :: " + strconv.Itoa(score.Score)
 }
 
 func (scores *HighScores) String() string {
@@ -81,8 +84,6 @@ func deSerialize(file *os.File) (*HighScores, error) {
 func Save(score *HighScore) {
 	currentScores, _ := Load()
 	currentScores = append(currentScores, *score)
-
-	log.Println("Saving current high scores: " + currentScores.String())
 
 	payload, serializeError := serialize(&currentScores)
 	if serializeError != nil {
@@ -164,4 +165,48 @@ func decrypt(payload []byte) ([]byte, error) {
 	decryptionStream.XORKeyStream(encryptedPayload, encryptedPayload)
 
 	return encryptedPayload, nil
+}
+
+// CreateHighScoreWindow creates and shows the window with top-10 scores
+func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
+	log.Println("Creating high score window...")
+
+	lines, cols := s.MaxYX()
+	title := "High scores"
+	y, x := 12, 50
+
+	highScoreWindow, windowCreateError := createWindow(y, x, (lines/2)-y/2, (cols/2)-x/2)
+
+	if windowCreateError != nil {
+		log.Panic("Error creating high score window:", windowCreateError)
+		return nil, windowCreateError
+	}
+
+	// scores, scoreLoadError := Load()
+	// if scoreLoadError != nil {
+	// 	return nil, scoreLoadError
+	// }
+
+	highScoreWindow.Box(0, 0)
+	highScoreWindow.ColorOn(1)
+	highScoreWindow.MovePrint(1, (x/2)-(len(title)/2), title)
+	highScoreWindow.ColorOff(1)
+	highScoreWindow.MoveAddChar(2, 0, gc.ACS_LTEE)
+	highScoreWindow.HLine(2, 1, gc.ACS_HLINE, x-2)
+	highScoreWindow.MoveAddChar(2, x-1, gc.ACS_RTEE)
+	highScoreWindow.Refresh()
+
+	log.Println("High score window created")
+
+	return highScoreWindow, nil
+}
+
+func createWindow(height, width, y, x int) (*gc.Window, error) {
+	wnd, err := gc.NewWindow(height, width, y, x)
+	if err != nil {
+		message := "Error during creating the window"
+		log.Fatal(message)
+		return nil, errors.New(message)
+	}
+	return wnd, nil
 }
