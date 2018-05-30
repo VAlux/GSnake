@@ -1,3 +1,4 @@
 .idea/
 log.txt
 *.hsc
+*.DS_Store
