@@ -9,13 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	ll "Snake/linkedlist"
-
 	gc "github.com/rthornton128/goncurses"
-
-	mm "Snake/mainmenu"
-
-	hc "Snake/highscore"
 )
 
 //======================= texture :) definitions =======================
@@ -75,33 +69,33 @@ const initialLength = 4
 
 //======================= Main menu definitions =======================
 
-var mainMenu = &mm.MainMenu{}
+var menu = &GameMenu{}
 
 const continueMenuItemTitle = "Continue"
-const newGameMenuItemTitle = "New Game"
+const newmenuItemTitle = "New Game"
 const optionsMenuItemTitle = "Options"
 const highScoreMenuItemTitle = "High Score"
 const aboutMenuItemTitle = "About"
 const exitMenuItemTitle = "Exit"
 
 const continueMenuItemDescription = " -- Resume current game"
-const newGameMenuItemDescription = " -- Begin new game"
+const newmenuItemDescription = " -- Begin new game"
 const optionsMenuItemDescription = " -- Review or change game settings"
 const highScoreMenuItemDescription = " -- See the leadership table"
 const aboutMenuItemDescription = " -- Info about creator"
 const exitMenuItemDescription = " -- Save score and close the game"
 
-var menuOptionsKeySet = &[]mm.MenuItemContent{
-	mm.MenuItemContent{MenuItemTitle: continueMenuItemTitle, MenuItemDescription: continueMenuItemDescription},
-	mm.MenuItemContent{MenuItemTitle: newGameMenuItemTitle, MenuItemDescription: newGameMenuItemDescription},
-	mm.MenuItemContent{MenuItemTitle: optionsMenuItemTitle, MenuItemDescription: optionsMenuItemDescription},
-	mm.MenuItemContent{MenuItemTitle: highScoreMenuItemTitle, MenuItemDescription: highScoreMenuItemDescription},
-	mm.MenuItemContent{MenuItemTitle: aboutMenuItemTitle, MenuItemDescription: aboutMenuItemDescription},
-	mm.MenuItemContent{MenuItemTitle: exitMenuItemTitle, MenuItemDescription: exitMenuItemDescription}}
+var menuOptionsKeySet = &[]MenuItemContent{
+	MenuItemContent{MenuItemTitle: continueMenuItemTitle, MenuItemDescription: continueMenuItemDescription},
+	MenuItemContent{MenuItemTitle: newmenuItemTitle, MenuItemDescription: newmenuItemDescription},
+	MenuItemContent{MenuItemTitle: optionsMenuItemTitle, MenuItemDescription: optionsMenuItemDescription},
+	MenuItemContent{MenuItemTitle: highScoreMenuItemTitle, MenuItemDescription: highScoreMenuItemDescription},
+	MenuItemContent{MenuItemTitle: aboutMenuItemTitle, MenuItemDescription: aboutMenuItemDescription},
+	MenuItemContent{MenuItemTitle: exitMenuItemTitle, MenuItemDescription: exitMenuItemDescription}}
 
-var menuOptionsHandlerMap = &map[string]mm.MenuItemHandlerFunction{
+var menuOptionsHandlerMap = &map[string]MenuItemHandlerFunction{
 	continueMenuItemTitle:  continueOptionHandler,
-	newGameMenuItemTitle:   newGameOptionHandler,
+	newmenuItemTitle:       newGameOptionHandler,
 	optionsMenuItemTitle:   optionsOptionHandler,
 	highScoreMenuItemTitle: highScoreOptionHandler,
 	aboutMenuItemTitle:     aboutOptionHandler,
@@ -118,8 +112,8 @@ type object interface {
 }
 
 type snake struct {
-	head      *ll.Node
-	body      *ll.LinkedList
+	head      *Node
+	body      *LinkedList
 	direction *point
 }
 
@@ -165,14 +159,14 @@ func (s *snake) update(w *gc.Window) {
 
 	dy := s.head.Data.(point).y + offset.y
 	dx := s.head.Data.(point).x + offset.x
-	newHead := &ll.Node{Data: point{dy, dx}}
+	newHead := &Node{Data: point{dy, dx}}
 
 	if s.checkCollision(newHead) {
 		events <- collisionEvent
 	}
 
 	if s.checkFoodCollision(newHead) {
-		s.body.Prepend(&ll.Node{Data: point{dy, dx}})
+		s.body.Prepend(&Node{Data: point{dy, dx}})
 		newHead.Data.(point).offsetP(offset)
 		*currentFood = *generateFood(s)
 		events <- foodEatenEvent
@@ -196,7 +190,7 @@ func (s *snake) draw(w *gc.Window) {
 	w.ColorOff(2)
 }
 
-func (s *snake) checkCollision(n *ll.Node) bool {
+func (s *snake) checkCollision(n *Node) bool {
 	return n.Data.(point).x <= 0 ||
 		n.Data.(point).y <= 0 ||
 		n.Data.(point).x >= maxX-3 ||
@@ -204,7 +198,7 @@ func (s *snake) checkCollision(n *ll.Node) bool {
 		s.body.Contains(n)
 }
 
-func (s *snake) checkFoodCollision(n *ll.Node) bool {
+func (s *snake) checkFoodCollision(n *Node) bool {
 	return n.Data.(point) == *currentFood.position
 }
 
@@ -273,7 +267,7 @@ func handleInput(w *gc.Window, s *snake) {
 	case 'p':
 		isPaused = !isPaused
 		if isPaused {
-			mainMenu = createMainMenu(w)
+			menu = createmenu(w)
 		}
 		break
 	case 'q':
@@ -284,15 +278,20 @@ func handleInput(w *gc.Window, s *snake) {
 	}
 }
 
-func createMainMenu(w *gc.Window) *mm.MainMenu {
-	return mm.New(w, menuOptionsKeySet, menuOptionsHandlerMap)
+func createmenu(w *gc.Window) *GameMenu {
+	return NewMenu(w, menuOptionsKeySet, menuOptionsHandlerMap)
 }
 
 func gameOver(s *gc.Window) {
 	lines, cols := s.MaxYX()
 	msg := "Game Over"
 
-	wnd := createWindow(5, len(msg)+4, (lines/2)-2, (cols-len(msg))/2)
+	wnd, err := createWindow(5, len(msg)+4, (lines/2)-2, (cols-len(msg))/2)
+	if err != nil {
+		log.Panic("Error creating game over window", err)
+		return
+	}
+
 	wnd.MovePrint(2, 2, msg)
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
 	wnd.Refresh()
@@ -303,7 +302,12 @@ func drawStats(sn *snake) {
 	snakeLength := "length: " + strconv.Itoa(sn.body.Size())
 	scoredPoints := "score: " + strconv.Itoa(score)
 
-	wnd := createWindow(statsH, statsW-2, statsY, statsX)
+	wnd, err := createWindow(statsH, statsW-2, statsY, statsX)
+	if err != nil {
+		log.Panic("Error creating stats window", err)
+		return
+	}
+
 	wnd.ColorOn(3)
 	wnd.AttrOn(gc.A_BOLD)
 	wnd.MovePrint(1, 1, snakeLength)
@@ -315,11 +319,11 @@ func drawStats(sn *snake) {
 }
 
 func createSnake(y, x int) *snake {
-	head := &ll.Node{Data: point{y, x}}
-	body := ll.New()
+	head := &Node{Data: point{y, x}}
+	body := New()
 
 	for i := 1; i <= initialLength; i++ {
-		body.Append(&ll.Node{Data: point{y, x + i}})
+		body.Append(&Node{Data: point{y, x + i}})
 	}
 
 	body.Prepend(head)
@@ -338,12 +342,14 @@ func generateFood(sn *snake) *food {
 	return &food{position: foodPos}
 }
 
-func createWindow(height, width, y, x int) *gc.Window {
+func createWindow(height, width, y, x int) (*gc.Window, error) {
 	wnd, err := gc.NewWindow(height, width, y, x)
 	if err != nil {
-		log.Fatal("Error during creating the window...")
+		message := "Error during creating the window"
+		log.Fatal(message)
+		return nil, errors.New(message)
 	}
-	return wnd
+	return wnd, nil
 }
 
 func removeWindow(wnd *gc.Window) {
@@ -352,11 +358,15 @@ func removeWindow(wnd *gc.Window) {
 	wnd.Delete()
 }
 
-func createGameWindow(y, x, height, width int) *gc.Window {
-	wnd := createWindow(height, width, y, x)
+func createGameWindow(y, x, height, width int) (*gc.Window, error) {
+	wnd, err := createWindow(height, width, y, x)
+	if err != nil {
+		log.Panic("Error creating game window:", err)
+		return nil, err
+	}
 	wnd.Box(gc.ACS_VLINE, gc.ACS_HLINE)
 	wnd.Refresh()
-	return wnd
+	return wnd, nil
 }
 
 func openLogFile() *os.File {
@@ -400,7 +410,7 @@ func handleEvents(s *snake, w *gc.Window) {
 			break
 		}
 		if event == highScoreEvent {
-			hc.CreateHighScoreWindow(w)
+			CreateHighScoreWindow(w)
 		}
 	default:
 		break
@@ -464,7 +474,7 @@ func initScreenDimensions(stdscr *gc.Window) error {
 	statsX, statsY, statsH, statsW = 1, 0, 3, maxX
 	log.Printf("Resolution: %d x %d", maxX, maxY)
 	// Check the resolution and exit if the terminal window is too small
-	if maxY < mm.MenuWindowHeight+5 || maxX < mm.MenuWindowWidth+5 {
+	if maxY < MenuWindowHeight+5 || maxX < MenuWindowWidth+5 {
 		log.Print("Recommended resolution is 60x25")
 		return errors.New("Too small game window. Program will exit")
 	}
@@ -493,10 +503,10 @@ func main() {
 	defer logFile.Close()
 	defer gc.End()
 	defer gameOver(stdscr)
-	defer log.Println(" <==== Game session ended")
+	defer log.Println(" <==== Game session ended\n")
 	//
 
-	log.Println("\n====> Game session started")
+	log.Println("====> Game session started")
 	initNcurses()
 
 	dimensionsInitError := initScreenDimensions(stdscr)
@@ -508,8 +518,12 @@ func main() {
 	ticker := time.NewTicker(time.Second / speedFactor)
 
 	// Create in-game windows
-	gameWindow := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
-	mainMenu = createMainMenu(gameWindow)
+	gameWindow, err := createGameWindow(statsY+statsH, statsX, maxY-statsH, statsW-2)
+	if err != nil {
+		log.Panic("Error initializing game window:", err)
+		return
+	}
+	menu = createmenu(gameWindow)
 	//
 
 	newGame(gameWindow, maxY/2, maxX/2)
@@ -524,13 +538,13 @@ func main() {
 				drawStats(playerSnake)
 				handleEvents(playerSnake, gameWindow)
 			} else {
-				if !mainMenu.HandleInput() {
+				if !menu.HandleInput() {
 					isPaused = false
-					mainMenu.Free()
+					menu.Free()
 				}
 			}
 		}
 	}
 
-	hc.Save(&hc.HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
+	Save(&HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
 }
