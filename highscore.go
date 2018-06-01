@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	t "time"
 
@@ -170,6 +171,21 @@ func decrypt(payload []byte) ([]byte, error) {
 	return encryptedPayload, nil
 }
 
+// Len gets the amount of elements in HighScores type
+func (scores HighScores) Len() int {
+	return len(scores)
+}
+
+// Swap swaps i'th and j'th elements in the HighScores type
+func (scores HighScores) Swap(i, j int) {
+	scores[i], scores[j] = scores[j], scores[i]
+}
+
+//Less determines which of the HighScore entry is less than another
+func (scores HighScores) Less(i, j int) bool {
+	return scores[i].Score > scores[j].Score
+}
+
 func awaitClosingAction(wnd *gc.Window) {
 	ch := wnd.GetChar()
 	switch ch {
@@ -190,7 +206,6 @@ func CreateHighScoreWindow(s *gc.Window) {
 	height, width := highScoreWindowHeight, highScoreWindowWidth
 
 	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
-
 	if windowCreateError != nil {
 		log.Panic("Error creating high score window:", windowCreateError)
 	}
@@ -199,6 +214,7 @@ func CreateHighScoreWindow(s *gc.Window) {
 	if scoreLoadError != nil {
 		log.Panic("Error creating high score window:", scoreLoadError)
 	}
+	sort.Sort(HighScores(scores))
 
 	wnd.Box(0, 0)
 	wnd.ColorOn(1)
