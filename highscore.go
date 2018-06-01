@@ -23,6 +23,7 @@ const highScoreFilename = "score.hsc"
 const highScoreWindowWidth = 70
 const highScoreWindowHeight = 15
 const maxAmountOfTopHighScores = 10
+const highscoreWindowTitle = "High scores"
 
 // HighScore represents all of the single high-score entry components
 type HighScore struct {
@@ -34,12 +35,14 @@ type HighScore struct {
 // HighScores represents a slice of HighScore entries
 type HighScores []HighScore
 
-func initialize() {
+func init() {
 	gob.Register(HighScore{})
 }
 
 func (score *HighScore) String() string {
-	return score.Timestamp.String() + "\t\t" + score.PlayerName + "\t" + strconv.Itoa(score.Score)
+	return score.Timestamp.Format(t.RFC1123) + "\t" +
+		score.PlayerName + "\t" +
+		strconv.Itoa(score.Score)
 }
 
 func (scores *HighScores) String() string {
@@ -84,9 +87,9 @@ func deSerialize(file *os.File) (*HighScores, error) {
 	return score, nil
 }
 
-// Save writes high score structure to file
-func Save(score *HighScore) {
-	currentScores, _ := Load()
+// SaveHighScore writes high score structure to file
+func SaveHighScore(score *HighScore) {
+	currentScores, _ := LoadHighScore()
 	currentScores = append(currentScores, *score)
 
 	payload, serializeError := serialize(&currentScores)
@@ -109,8 +112,8 @@ func Save(score *HighScore) {
 	log.Printf("High score successfully saved to file: %s", highScoreFilename)
 }
 
-// Load reads high score structure from file
-func Load() (HighScores, error) {
+// LoadHighScore reads high score structure from file
+func LoadHighScore() (HighScores, error) {
 	log.Printf("Loading high score from file: %s", highScoreFilename)
 	file, readError := os.Open(highScoreFilename)
 	if readError != nil {
@@ -176,12 +179,12 @@ func (scores HighScores) Len() int {
 	return len(scores)
 }
 
-// Swap swaps i'th and j'th elements in the HighScores type
+// Swap swaps i-th and j-th elements in the HighScores type
 func (scores HighScores) Swap(i, j int) {
 	scores[i], scores[j] = scores[j], scores[i]
 }
 
-//Less determines which of the HighScore entry is less than another
+//Less allows to sort high scores in descending score order
 func (scores HighScores) Less(i, j int) bool {
 	return scores[i].Score > scores[j].Score
 }
@@ -197,33 +200,44 @@ func awaitClosingAction(wnd *gc.Window) {
 	}
 }
 
-// CreateHighScoreWindow creates and shows the window with top-10 scores
+// CreateHighScoreWindow creates and shows the window with top scores
 func CreateHighScoreWindow(s *gc.Window) {
 	log.Println("Creating high score window...")
 
 	lines, cols := s.MaxYX()
-	title := "High scores"
 	height, width := highScoreWindowHeight, highScoreWindowWidth
+	contentOffset := 3
 
 	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
 	if windowCreateError != nil {
-		log.Panic("Error creating high score window:", windowCreateError)
+		log.Panic("Error creating high score window: ", windowCreateError)
+		return
 	}
 
-	scores, scoreLoadError := Load()
+	scores, scoreLoadError := LoadHighScore()
 	if scoreLoadError != nil {
-		log.Panic("Error creating high score window:", scoreLoadError)
+		log.Println("Error loading high scores: ", scoreLoadError)
+		scores = HighScores{}
 	}
 	sort.Sort(HighScores(scores))
 
+	log.Println(scores)
+
 	wnd.Box(0, 0)
 	wnd.ColorOn(1)
-	wnd.MovePrint(1, (width/2)-(len(title)/2), title)
+	wnd.MovePrint(
+		1,
+		(width/2)-(len(highscoreWindowTitle)/2),
+		highscoreWindowTitle)
 	wnd.ColorOff(1)
 
 	wnd.ColorOn(3)
 	for idx, score := range scores {
-		wnd.MovePrint(idx+2, 2, score.String())
+		scoreContent := score.String()
+		wnd.MovePrint(
+			idx+contentOffset,
+			(width/2)-(len(scoreContent)/2)-contentOffset,
+			scoreContent)
 		if idx > maxAmountOfTopHighScores {
 			break
 		}

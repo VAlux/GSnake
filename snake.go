@@ -546,5 +546,7 @@ func main() {
 		}
 	}
 
-	Save(&HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
+	if score > 0 {
+		SaveHighScore(&HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
+	}
 }
