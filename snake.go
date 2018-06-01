@@ -503,7 +503,7 @@ func main() {
 	defer logFile.Close()
 	defer gc.End()
 	defer gameOver(stdscr)
-	defer log.Println(" <==== Game session ended\n")
+	defer log.Println(" <==== Game session ended\n ")
 	//
 
 	log.Println("====> Game session started")

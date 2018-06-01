@@ -19,6 +19,8 @@ import (
 
 const highScoreFilename = "score.hsc"
 const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
+const highScoreWindowWidth = 70
+const highScoreWindowHeight = 15
 
 // HighScore represents all of the single high-score entry components
 type HighScore struct {
@@ -173,30 +175,40 @@ func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
 
 	lines, cols := s.MaxYX()
 	title := "High scores"
-	y, x := 12, 50
+	height, width := highScoreWindowHeight, highScoreWindowWidth
 
-	highScoreWindow, windowCreateError := createWindow(y, x, (lines/2)-y/2, (cols/2)-x/2)
+	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
 
 	if windowCreateError != nil {
 		log.Panic("Error creating high score window:", windowCreateError)
 		return nil, windowCreateError
 	}
 
-	// scores, scoreLoadError := Load()
-	// if scoreLoadError != nil {
-	// 	return nil, scoreLoadError
-	// }
+	scores, scoreLoadError := Load()
+	if scoreLoadError != nil {
+		return nil, scoreLoadError
+	}
 
-	highScoreWindow.Box(0, 0)
-	highScoreWindow.ColorOn(1)
-	highScoreWindow.MovePrint(1, (x/2)-(len(title)/2), title)
-	highScoreWindow.ColorOff(1)
-	highScoreWindow.MoveAddChar(2, 0, gc.ACS_LTEE)
-	highScoreWindow.HLine(2, 1, gc.ACS_HLINE, x-2)
-	highScoreWindow.MoveAddChar(2, x-1, gc.ACS_RTEE)
-	highScoreWindow.Refresh()
+	wnd.Box(0, 0)
+	wnd.ColorOn(1)
+	wnd.MovePrint(1, (width/2)-(len(title)/2), title)
+	wnd.ColorOff(1)
+
+	wnd.ColorOn(3)
+	for idx, score := range scores {
+		wnd.MovePrint(idx+2, 2, score.String())
+		if idx > 10 {
+			break
+		}
+	}
+	wnd.ColorOff(3)
+
+	wnd.MoveAddChar(2, 0, gc.ACS_LTEE)
+	wnd.HLine(2, 1, gc.ACS_HLINE, width-2)
+	wnd.MoveAddChar(2, width-1, gc.ACS_RTEE)
+	wnd.Refresh()
 
 	log.Println("High score window created")
 
-	return highScoreWindow, nil
+	return wnd, nil
 }
