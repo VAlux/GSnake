@@ -190,14 +190,9 @@ func (scores HighScores) Less(i, j int) bool {
 }
 
 func awaitClosingAction(wnd *gc.Window) {
-	ch := wnd.GetChar()
-	switch ch {
-	case 'q':
-		removeWindow(wnd)
-		return
-	default:
-		awaitClosingAction(wnd)
+	for wnd.GetChar() == 0 {
 	}
+	removeWindow(wnd)
 }
 
 // CreateHighScoreWindow creates and shows the window with top scores
