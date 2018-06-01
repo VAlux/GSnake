@@ -17,10 +17,11 @@ import (
 	gc "github.com/rthornton128/goncurses"
 )
 
-const highScoreFilename = "score.hsc"
 const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
+const highScoreFilename = "score.hsc"
 const highScoreWindowWidth = 70
 const highScoreWindowHeight = 15
+const maxAmountOfTopHighScores = 10
 
 // HighScore represents all of the single high-score entry components
 type HighScore struct {
@@ -37,7 +38,7 @@ func initialize() {
 }
 
 func (score *HighScore) String() string {
-	return score.Timestamp.String() + " :: " + score.PlayerName + " :: " + strconv.Itoa(score.Score)
+	return score.Timestamp.String() + "\t\t" + score.PlayerName + "\t" + strconv.Itoa(score.Score)
 }
 
 func (scores *HighScores) String() string {
@@ -169,8 +170,19 @@ func decrypt(payload []byte) ([]byte, error) {
 	return encryptedPayload, nil
 }
 
+func awaitClosingAction(wnd *gc.Window) {
+	ch := wnd.GetChar()
+	switch ch {
+	case 'q':
+		removeWindow(wnd)
+		return
+	default:
+		awaitClosingAction(wnd)
+	}
+}
+
 // CreateHighScoreWindow creates and shows the window with top-10 scores
-func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
+func CreateHighScoreWindow(s *gc.Window) {
 	log.Println("Creating high score window...")
 
 	lines, cols := s.MaxYX()
@@ -181,12 +193,11 @@ func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
 
 	if windowCreateError != nil {
 		log.Panic("Error creating high score window:", windowCreateError)
-		return nil, windowCreateError
 	}
 
 	scores, scoreLoadError := Load()
 	if scoreLoadError != nil {
-		return nil, scoreLoadError
+		log.Panic("Error creating high score window:", scoreLoadError)
 	}
 
 	wnd.Box(0, 0)
@@ -197,7 +208,7 @@ func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
 	wnd.ColorOn(3)
 	for idx, score := range scores {
 		wnd.MovePrint(idx+2, 2, score.String())
-		if idx > 10 {
+		if idx > maxAmountOfTopHighScores {
 			break
 		}
 	}
@@ -210,5 +221,5 @@ func CreateHighScoreWindow(s *gc.Window) (*gc.Window, error) {
 
 	log.Println("High score window created")
 
-	return wnd, nil
+	awaitClosingAction(wnd)
 }
