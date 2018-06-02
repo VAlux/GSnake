@@ -184,7 +184,7 @@ func (scores HighScores) Swap(i, j int) {
 	scores[i], scores[j] = scores[j], scores[i]
 }
 
-//Less allows to sort high scores in descending score order
+// Less allows to sort high scores in descending score order
 func (scores HighScores) Less(i, j int) bool {
 	return scores[i].Score > scores[j].Score
 }
@@ -215,8 +215,6 @@ func CreateHighScoreWindow(s *gc.Window) {
 		scores = HighScores{}
 	}
 	sort.Sort(HighScores(scores))
-
-	log.Println(scores)
 
 	wnd.Box(0, 0)
 	wnd.ColorOn(1)

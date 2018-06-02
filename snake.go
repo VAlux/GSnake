@@ -412,6 +412,10 @@ func handleEvents(s *snake, w *gc.Window) {
 		if event == highScoreEvent {
 			CreateHighScoreWindow(w)
 		}
+		if event == aboutEvent {
+			CreateAboutWindow(w)
+			break
+		}
 	default:
 		break
 	}
@@ -433,7 +437,7 @@ func newGameOptionHandler() bool {
 func optionsOptionHandler() bool {
 	log.Print("Options menu option selected")
 	events <- optionsEvent
-	return true
+	return false
 }
 
 func highScoreOptionHandler() bool {
@@ -445,7 +449,7 @@ func highScoreOptionHandler() bool {
 func aboutOptionHandler() bool {
 	log.Print("About menu option selected")
 	events <- aboutEvent
-	return true
+	return false
 }
 
 func exitOptionHandler() bool {
