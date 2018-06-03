@@ -352,6 +352,12 @@ func createWindow(height, width, y, x int) (*gc.Window, error) {
 	return wnd, nil
 }
 
+func awaitClosingAction(wnd *gc.Window) {
+	for wnd.GetChar() == 0 {
+	}
+	removeWindow(wnd)
+}
+
 func removeWindow(wnd *gc.Window) {
 	wnd.Erase()
 	wnd.Refresh()
@@ -418,6 +424,18 @@ func handleEvents(s *snake, w *gc.Window) {
 		}
 	default:
 		break
+	}
+}
+
+// saveHighScore Enter player name and save the high score
+func saveHighScore(w *gc.Window) {
+	if score > 0 {
+		playerName := CreatePlayerNameInputFormWindow(w)
+		SaveHighScore(
+			&HighScore{
+				Timestamp:  time.Now(),
+				Score:      score,
+				PlayerName: playerName})
 	}
 }
 
@@ -532,7 +550,7 @@ func main() {
 
 	newGame(gameWindow, maxY/2, maxX/2)
 
-	//Game Loop:
+	// Game Loop:
 	for isRunning {
 		select {
 		case <-ticker.C:
@@ -550,7 +568,5 @@ func main() {
 		}
 	}
 
-	if score > 0 {
-		SaveHighScore(&HighScore{Timestamp: time.Now(), Score: score, PlayerName: "Alvo"})
-	}
+	saveHighScore(stdscr)
 }

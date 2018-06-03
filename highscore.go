@@ -20,10 +20,10 @@ import (
 
 const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
 const highScoreFilename = "score.hsc"
+const highscoreWindowTitle = "High scores"
 const highScoreWindowWidth = 70
 const highScoreWindowHeight = 15
 const maxAmountOfTopHighScores = 10
-const highscoreWindowTitle = "High scores"
 
 // HighScore represents all of the single high-score entry components
 type HighScore struct {
@@ -187,12 +187,6 @@ func (scores HighScores) Swap(i, j int) {
 // Less allows to sort high scores in descending score order
 func (scores HighScores) Less(i, j int) bool {
 	return scores[i].Score > scores[j].Score
-}
-
-func awaitClosingAction(wnd *gc.Window) {
-	for wnd.GetChar() == 0 {
-	}
-	removeWindow(wnd)
 }
 
 // CreateHighScoreWindow creates and shows the window with top scores

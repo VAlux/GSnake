@@ -6,7 +6,7 @@ import (
 	gc "github.com/rthornton128/goncurses"
 )
 
-const aboutWindowHeight = 10
+const aboutWindowHeight = 8
 const aboutWindowWidth = 40
 const aboutWindowTitle = "About"
 
