@@ -488,6 +488,7 @@ func initNcurses() {
 	gc.Cursor(0)
 	gc.Echo(false)
 	gc.Raw(true)
+	gc.CBreak(true)
 	gc.HalfDelay(1)
 }
 
@@ -518,6 +519,7 @@ func main() {
 		log.Panicln("Error during ncurses Init: ", err)
 	}
 
+	stdscr.Keypad(true)
 	rand.Seed(int64(time.Now().Second()))
 	logFile := initLogging()
 

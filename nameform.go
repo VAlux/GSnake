@@ -8,15 +8,20 @@ import (
 
 const defaultPlayerName = "Anon"
 const playerNameWindowTitle = "Player name"
-const playerNameWindowHeight = 6
-const playerNameWindowWidth = 40
+const playerNameWindowHeight = 20
+const playerNameWindowWidth = 80
 
 // CreatePlayerNameInputFormWindow create and show the window with player name input form
 func CreatePlayerNameInputFormWindow(s *gc.Window) string {
 	lines, cols := s.MaxYX()
 	height, width := playerNameWindowHeight, playerNameWindowWidth
 
-	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
+	wnd, windowCreateError := createWindow(
+		height,
+		width,
+		(lines/2)-height/2,
+		(cols/2)-width/2)
+
 	if windowCreateError != nil {
 		log.Println("Error creating player name input form window: ", windowCreateError)
 		return defaultPlayerName
@@ -37,7 +42,9 @@ func CreatePlayerNameInputFormWindow(s *gc.Window) string {
 
 	log.Println("High score window created")
 
-	return createPlayerNameForm(wnd)
+	playerName := createPlayerNameForm(wnd)
+	removeWindow(wnd)
+	return playerName
 }
 
 // createPlayerNameForm create input form for entering the player name
@@ -48,7 +55,10 @@ func createPlayerNameForm(w *gc.Window) string {
 	nameField.SetBackground(gc.ColorPair(2) | gc.A_UNDERLINE | gc.A_BOLD)
 	nameField.SetOptionsOff(gc.FO_AUTOSKIP)
 
-	form, _ := gc.NewForm([]*gc.Field{nameField})
+	fields := make([]*gc.Field, 1)
+	fields[0] = nameField
+
+	form, _ := gc.NewForm(fields)
 	form.Post()
 	defer form.UnPost()
 	defer form.Free()
@@ -60,8 +70,9 @@ func createPlayerNameForm(w *gc.Window) string {
 	w.Refresh()
 
 	form.Driver(gc.REQ_FIRST_FIELD)
+
 	ch := w.GetChar()
-	for true {
+	for ch != 'q' {
 		switch ch {
 		case gc.KEY_ENTER, gc.KEY_RETURN:
 			return nameField.Buffer()
