@@ -345,8 +345,7 @@ func generateFood(sn *snake) *food {
 func createWindow(height, width, y, x int) (*gc.Window, error) {
 	wnd, err := gc.NewWindow(height, width, y, x)
 	if err != nil {
-		message := "Error during creating the window"
-		log.Fatal(message)
+		message := "Error during creating the window: " + err.Error()
 		return nil, errors.New(message)
 	}
 	return wnd, nil
@@ -427,10 +426,10 @@ func handleEvents(s *snake, w *gc.Window) {
 	}
 }
 
-// saveHighScore Enter player name and save the high score
+// saveHighScore Enter player name and save the high score if it is greater than 0
 func saveHighScore(w *gc.Window) {
 	if score > 0 {
-		playerName := CreatePlayerNameInputFormWindow(w)
+		playerName := GetPlayerName(w)
 		SaveHighScore(
 			&HighScore{
 				Timestamp:  time.Now(),

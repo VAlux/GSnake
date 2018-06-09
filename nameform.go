@@ -8,11 +8,12 @@ import (
 
 const defaultPlayerName = "Anon"
 const playerNameWindowTitle = "Player name"
-const playerNameWindowHeight = 20
-const playerNameWindowWidth = 80
+const playerNameWindowHeight = 10
+const playerNameWindowWidth = 50
 
-// CreatePlayerNameInputFormWindow create and show the window with player name input form
-func CreatePlayerNameInputFormWindow(s *gc.Window) string {
+// GetPlayerName create and show the window with player name input form
+func GetPlayerName(s *gc.Window) string {
+
 	lines, cols := s.MaxYX()
 	height, width := playerNameWindowHeight, playerNameWindowWidth
 
@@ -21,6 +22,13 @@ func CreatePlayerNameInputFormWindow(s *gc.Window) string {
 		width,
 		(lines/2)-height/2,
 		(cols/2)-width/2)
+
+	// we need to enable echo and cursor to be able to input something in the terminal
+	gc.Echo(true)
+	gc.Cursor(1)
+	defer gc.Echo(false)
+	defer gc.Cursor(0)
+	//
 
 	if windowCreateError != nil {
 		log.Println("Error creating player name input form window: ", windowCreateError)
@@ -42,47 +50,24 @@ func CreatePlayerNameInputFormWindow(s *gc.Window) string {
 
 	log.Println("High score window created")
 
-	playerName := createPlayerNameForm(wnd)
+	playerName := promptPlayerName(wnd)
+	log.Println("player name is: ", playerName)
 	removeWindow(wnd)
 	return playerName
 }
 
-// createPlayerNameForm create input form for entering the player name
-func createPlayerNameForm(w *gc.Window) string {
-	nameField, _ := gc.NewField(1, 10, 4, 18, 0, 0)
-	defer nameField.Free()
-	nameField.SetForeground(gc.ColorPair(1))
-	nameField.SetBackground(gc.ColorPair(2) | gc.A_UNDERLINE | gc.A_BOLD)
-	nameField.SetOptionsOff(gc.FO_AUTOSKIP)
+func promptPlayerName(w *gc.Window) string {
+	msg := "Enter your name: "
+	row, col := w.MaxYX()
+	row, col = (row/2)-1, 4
+	w.MovePrint(row, col, msg)
 
-	fields := make([]*gc.Field, 1)
-	fields[0] = nameField
-
-	form, _ := gc.NewForm(fields)
-	form.Post()
-	defer form.UnPost()
-	defer form.Free()
-	w.Refresh()
-
-	w.AttrOn(gc.ColorPair(2) | gc.A_BOLD)
-	w.MovePrint(3, 5, "Player Name:")
-	w.AttrOff(gc.ColorPair(2) | gc.A_BOLD)
-	w.Refresh()
-
-	form.Driver(gc.REQ_FIRST_FIELD)
-
-	ch := w.GetChar()
-	for ch != 'q' {
-		switch ch {
-		case gc.KEY_ENTER, gc.KEY_RETURN:
-			return nameField.Buffer()
-		case gc.KEY_BACKSPACE:
-			form.Driver(gc.REQ_CLR_FIELD)
-		default:
-			form.Driver(ch)
-		}
-		ch = w.GetChar()
+	var str string
+	str, err := w.GetString(12)
+	if err != nil {
+		log.Panic("Error getting player name string: ", err)
+		return defaultPlayerName
 	}
-
-	return defaultPlayerName
+	w.Refresh()
+	return str
 }
