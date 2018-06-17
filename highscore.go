@@ -22,7 +22,7 @@ const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
 const highScoreFilename = "score.hsc"
 const highscoreWindowTitle = "High scores"
 const highScoreWindowWidth = 70
-const highScoreWindowHeight = 15
+const highScoreWindowHeight = 14
 const maxAmountOfTopHighScores = 10
 
 // HighScore represents all of the single high-score entry components
@@ -200,7 +200,6 @@ func CreateHighScoreWindow(s *gc.Window) {
 	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
 	if windowCreateError != nil {
 		log.Panic("Error creating high score window: ", windowCreateError)
-		return
 	}
 
 	scores, scoreLoadError := LoadHighScore()
@@ -220,14 +219,14 @@ func CreateHighScoreWindow(s *gc.Window) {
 
 	wnd.ColorOn(3)
 	for idx, score := range scores {
+		if idx >= maxAmountOfTopHighScores {
+			break
+		}
 		scoreContent := score.String()
 		wnd.MovePrint(
 			idx+contentOffset,
 			(width/2)-(len(scoreContent)/2)-contentOffset,
 			scoreContent)
-		if idx > maxAmountOfTopHighScores {
-			break
-		}
 	}
 	wnd.ColorOff(3)
 
