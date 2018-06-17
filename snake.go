@@ -14,44 +14,54 @@ import (
 
 //======================= texture :) definitions =======================
 
-const headTexture = `#`
-const tailTexture = `o`
-const foodTexture = `*`
-const emptyTexture = ` `
+const (
+	headTexture  = `#`
+	tailTexture  = `o`
+	foodTexture  = `*`
+	emptyTexture = ` `
+)
 
 //======================= event definitions =======================
 
-const collisionEvent = "collision"
-const exitEvent = "exit"
-const foodEatenEvent = "foodEaten"
-const newGameEvent = "newGame"
-const optionsEvent = "options"
-const highScoreEvent = "highScore"
-const aboutEvent = "about"
+const (
+	collisionEvent = "collision"
+	exitEvent      = "exit"
+	foodEatenEvent = "foodEaten"
+	newGameEvent   = "newGame"
+	optionsEvent   = "options"
+	highScoreEvent = "highScore"
+	aboutEvent     = "about"
+)
 
 //======================= direction definitions =======================
 
-var up = &point{-1, 0}
-var down = &point{1, 0}
-var left = &point{0, -1}
-var right = &point{0, 1}
-var nowhere = &point{0, 0}
+var (
+	up      = &point{-1, 0}
+	down    = &point{1, 0}
+	left    = &point{0, -1}
+	right   = &point{0, 1}
+	nowhere = &point{0, 0}
+)
 
 //======================= object definitions =======================
 
-var objects = make([]object, 0)
-var events = make(chan string, 1)
-var currentFood = &food{}
-var playerSnake = &snake{}
+var (
+	objects     = make([]object, 0)
+	events      = make(chan string, 1)
+	currentFood = &food{}
+	playerSnake = &snake{}
+)
 
 //======================= window definitions =======================
 
-var maxX = 0
-var maxY = 0
-var statsX = 0
-var statsY = 0
-var statsH = 0
-var statsW = 0
+var (
+	maxX   = 0
+	maxY   = 0
+	statsX = 0
+	statsY = 0
+	statsH = 0
+	statsW = 0
+)
 
 //========================= Gameplay definitions =========================
 
@@ -71,19 +81,23 @@ const initialLength = 4
 
 var menu = &GameMenu{}
 
-const continueMenuItemTitle = "Continue"
-const newmenuItemTitle = "New Game"
-const optionsMenuItemTitle = "Options"
-const highScoreMenuItemTitle = "High Score"
-const aboutMenuItemTitle = "About"
-const exitMenuItemTitle = "Exit"
+const (
+	continueMenuItemTitle  = "Continue"
+	newmenuItemTitle       = "New Game"
+	optionsMenuItemTitle   = "Options"
+	highScoreMenuItemTitle = "High Score"
+	aboutMenuItemTitle     = "About"
+	exitMenuItemTitle      = "Exit"
+)
 
-const continueMenuItemDescription = " -- Resume current game"
-const newmenuItemDescription = " -- Begin new game"
-const optionsMenuItemDescription = " -- Review or change game settings"
-const highScoreMenuItemDescription = " -- See the leadership table"
-const aboutMenuItemDescription = " -- Info about creator"
-const exitMenuItemDescription = " -- Save score and close the game"
+const (
+	continueMenuItemDescription  = " -- Resume current game"
+	newmenuItemDescription       = " -- Begin new game"
+	optionsMenuItemDescription   = " -- Review or change game settings"
+	highScoreMenuItemDescription = " -- See the leadership table"
+	aboutMenuItemDescription     = " -- Info about creator"
+	exitMenuItemDescription      = " -- Save score and close the game"
+)
 
 var menuOptionsKeySet = &[]MenuItemContent{
 	MenuItemContent{MenuItemTitle: continueMenuItemTitle, MenuItemDescription: continueMenuItemDescription},
