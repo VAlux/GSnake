@@ -347,8 +347,8 @@ func createSnake(y, x int) *snake {
 }
 
 func generateFood(sn *snake) *food {
-	randX := 1 + rand.Intn(maxX-3)
-	randY := 1 + rand.Intn(maxY-statsH-3)
+	randX := 1 + rand.Intn(maxX-4)
+	randY := 1 + rand.Intn(maxY-statsH-2)
 	foodPos := &point{y: randY, x: randX}
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
@@ -403,6 +403,10 @@ func newGame(w *gc.Window, headY int, headX int) {
 	currentFood = generateFood(playerSnake)
 	objects = make([]object, 0)
 	objects = append(objects, playerSnake, currentFood)
+	for i := 0; i < 7000; i++ {
+		test := generateFood(playerSnake)
+		objects = append(objects, test)
+	}
 	score = 0
 	w.Erase()
 	w.Box(gc.ACS_VLINE, gc.ACS_HLINE)
