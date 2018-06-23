@@ -367,6 +367,7 @@ func createWindow(height, width, y, x int) (*gc.Window, error) {
 
 func awaitClosingAction(wnd *gc.Window) {
 	for wnd.GetChar() == 0 {
+		gc.Nap(10) // to not to spin the cpu a lot
 	}
 	removeWindow(wnd)
 }
@@ -412,27 +413,27 @@ func handleEvents(s *snake, w *gc.Window) {
 	select {
 	case event := <-events:
 		log.Printf("Event occurred: %s", event)
-		if event == foodEatenEvent {
-			score += (scorePointValue*speedFactor + s.body.Size()) * maxX / maxY
+		switch event {
+		case foodEatenEvent:
+			score += (scorePointValue*speedFactor + s.body.Size()) * (maxX / maxY)
 			log.Printf("Score increased. Current score: %d", score)
-		}
-		if event == collisionEvent {
+			break
+		case collisionEvent:
 			isRunning = false // exit
 			break
-		}
-		if event == exitEvent {
+		case exitEvent:
 			isRunning = false // exit
 			break
-		}
-		if event == newGameEvent {
+		case newGameEvent:
 			newGame(w, maxY/2, maxX/2)
 			break
-		}
-		if event == highScoreEvent {
+		case highScoreEvent:
 			CreateHighScoreWindow(w)
-		}
-		if event == aboutEvent {
+			break
+		case aboutEvent:
 			CreateAboutWindow(w)
+			break
+		default:
 			break
 		}
 	default:
