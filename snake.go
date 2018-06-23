@@ -403,10 +403,6 @@ func newGame(w *gc.Window, headY int, headX int) {
 	currentFood = generateFood(playerSnake)
 	objects = make([]object, 0)
 	objects = append(objects, playerSnake, currentFood)
-	for i := 0; i < 7000; i++ {
-		test := generateFood(playerSnake)
-		objects = append(objects, test)
-	}
 	score = 0
 	w.Erase()
 	w.Box(gc.ACS_VLINE, gc.ACS_HLINE)
