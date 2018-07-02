@@ -367,7 +367,7 @@ func createWindow(height, width, y, x int) (*gc.Window, error) {
 
 func awaitClosingAction(wnd *gc.Window) {
 	for wnd.GetChar() == 0 {
-		gc.Nap(10) // to not to spin the cpu a lot
+		gc.Nap(10)
 	}
 	removeWindow(wnd)
 }
