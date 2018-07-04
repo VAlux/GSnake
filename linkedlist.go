@@ -24,8 +24,8 @@ func (list *LinkedList) Init() *LinkedList {
 	return list
 }
 
-// New creates empty linked list
-func New() *LinkedList {
+// NewList creates empty linked list
+func NewList() *LinkedList {
 	list := new(LinkedList).Init()
 	return list
 }

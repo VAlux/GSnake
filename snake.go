@@ -21,6 +21,8 @@ const (
 	emptyTexture = ` `
 )
 
+var foodAnimation = NewAnimation([]string{`-`, `\`, `|`, `/`})
+
 //======================= event definitions =======================
 
 const (
@@ -126,14 +128,16 @@ type object interface {
 }
 
 type snake struct {
-	head      *Node
-	body      *LinkedList
-	direction *point
+	head        *Node
+	body        *LinkedList
+	direction   *point
+	headTexture string
+	tailTexture string
 }
 
 type food struct {
-	position *point
-	color    int
+	position  *point
+	animation Animation
 }
 
 //=====================================================
@@ -153,24 +157,7 @@ func (p point) offsetP(off *point) {
 }
 
 func (s *snake) update(w *gc.Window) {
-	offset := nowhere
-	switch s.direction {
-	case up:
-		offset = up
-		break
-	case down:
-		offset = down
-		break
-	case left:
-		offset = left
-		break
-	case right:
-		offset = right
-		break
-	default:
-		return
-	}
-
+	offset := getOffset(s)
 	dy := s.head.Data.(point).y + offset.y
 	dx := s.head.Data.(point).x + offset.x
 	newHead := &Node{Data: point{dy, dx}}
@@ -193,12 +180,27 @@ func (s *snake) update(w *gc.Window) {
 	s.head = newHead
 }
 
+func getOffset(s *snake) *point {
+	switch s.direction {
+	case up:
+		return up
+	case down:
+		return down
+	case left:
+		return left
+	case right:
+		return right
+	default:
+		return nowhere
+	}
+}
+
 func (s *snake) draw(w *gc.Window) {
 	w.ColorOn(2)
 	w.AttrOn(gc.A_BOLD)
-	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, headTexture)
+	w.MovePrint(s.head.Data.(point).y, s.head.Data.(point).x, s.headTexture)
 	for node := s.head.Next; node.Next != nil; node = node.Next {
-		w.MovePrint(node.Data.(point).y, node.Data.(point).x, tailTexture)
+		w.MovePrint(node.Data.(point).y, node.Data.(point).x, s.tailTexture)
 	}
 	w.AttrOff(gc.A_BOLD)
 	w.ColorOff(2)
@@ -226,13 +228,13 @@ func (s *snake) containsNodeWithPoint(pt *point) bool {
 }
 
 func (f *food) update(w *gc.Window) {
-	// TODO: update the food color and/or animation
+	f.animation.moveFrameIndex()
 }
 
 func (f *food) draw(w *gc.Window) {
 	w.ColorOn(1)
 	w.AttrOn(gc.A_BOLD)
-	w.MovePrint(f.position.y, f.position.x, foodTexture)
+	w.MovePrint(f.position.y, f.position.x, f.animation.CurrentFrame())
 	w.AttrOff(gc.A_BOLD)
 	w.ColorOff(1)
 }
@@ -334,7 +336,7 @@ func drawStats(sn *snake) {
 
 func createSnake(y, x int) *snake {
 	head := &Node{Data: point{y, x}}
-	body := New()
+	body := NewList()
 
 	for i := 1; i <= initialLength; i++ {
 		body.Append(&Node{Data: point{y, x + i}})
@@ -342,7 +344,7 @@ func createSnake(y, x int) *snake {
 
 	body.Prepend(head)
 
-	newSnake := &snake{head, body, left}
+	newSnake := &snake{head, body, left, headTexture, tailTexture}
 	return newSnake
 }
 
@@ -353,7 +355,7 @@ func generateFood(sn *snake) *food {
 	if sn.containsNodeWithPoint(foodPos) {
 		generateFood(sn)
 	}
-	return &food{position: foodPos}
+	return &food{foodPos, foodAnimation}
 }
 
 func createWindow(height, width, y, x int) (*gc.Window, error) {
