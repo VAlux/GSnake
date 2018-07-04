@@ -4,10 +4,10 @@ package main
 type Animation interface {
 	NextFrame() string
 	CurrentFrame() string
+	MoveFrameIndex()
 
 	framesAmount() int
 	hasNextFrame() bool
-	moveFrameIndex()
 }
 
 // NewAnimation creates new animation object with specified frames array
@@ -28,7 +28,7 @@ func (a *animation) hasNextFrame() bool {
 	return a.currentFrameIndex < a.framesAmount()-1
 }
 
-func (a *animation) moveFrameIndex() {
+func (a *animation) MoveFrameIndex() {
 	if a.hasNextFrame() {
 		a.currentFrameIndex++
 	} else {
@@ -44,6 +44,6 @@ func (a *animation) CurrentFrame() string {
 // NextFrame get the next animation frame.
 // If there are no frames in the animation sequence - sequence will reset from 0
 func (a *animation) NextFrame() string {
-	a.moveFrameIndex()
+	a.MoveFrameIndex()
 	return a.CurrentFrame()
 }

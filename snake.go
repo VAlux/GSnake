@@ -228,7 +228,7 @@ func (s *snake) containsNodeWithPoint(pt *point) bool {
 }
 
 func (f *food) update(w *gc.Window) {
-	f.animation.moveFrameIndex()
+	f.animation.MoveFrameIndex()
 }
 
 func (f *food) draw(w *gc.Window) {
