@@ -21,7 +21,8 @@ const (
 	emptyTexture = ` `
 )
 
-var foodAnimation = NewAnimation([]string{`-`, `\`, `|`, `/`})
+// var foodAnimation = NewAnimation([]string{`-`, `\`, `|`, `/`})
+var foodAnimation = NewAnimation([]string{`+`, `x`, `*`, `x`}, 1)
 
 //======================= event definitions =======================
 

@@ -11,13 +11,14 @@ type Animation interface {
 }
 
 // NewAnimation creates new animation object with specified frames array
-func NewAnimation(frames []string) Animation {
-	return &animation{frames, 0}
+func NewAnimation(frames []string, duration int) Animation {
+	return &animation{frames, 0, duration}
 }
 
 type animation struct {
 	frames            []string
 	currentFrameIndex int
+	frameDuration     int
 }
 
 func (a *animation) framesAmount() int {
