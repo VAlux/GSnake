@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -21,8 +22,7 @@ const (
 	emptyTexture = ` `
 )
 
-// var foodAnimation = NewAnimation([]string{`-`, `\`, `|`, `/`})
-var foodAnimation = NewAnimation([]string{`+`, `x`, `*`, `x`}, 1)
+var foodAnimation = NewAnimation([]string{`-`, `\`, `|`, `/`}, 1)
 
 //======================= event definitions =======================
 
@@ -75,6 +75,7 @@ var isRunning = true
 var isPaused = true
 
 var score = 0
+var boundFactor = 0
 
 const scorePointValue = 6
 const speedFactor = 8
@@ -259,8 +260,12 @@ func tick(w *gc.Window) {
 }
 
 func handleInput(w *gc.Window, s *snake) {
-	key := w.GetChar()
-	switch byte(key) {
+	key := byte(w.GetChar())
+	if key == 0 {
+		return
+	}
+
+	switch key {
 	case 'w':
 		if s.direction != down {
 			s.direction = up
@@ -281,17 +286,18 @@ func handleInput(w *gc.Window, s *snake) {
 			s.direction = right
 		}
 		break
-	case 'p':
-		isPaused = !isPaused
-		if isPaused {
-			menu = createmenu(w)
-		}
-		break
-	case 'q':
-		events <- exitEvent
+	case 'p', 27: // p or escape key
+		pause(w)
 		break
 	default:
 		break
+	}
+}
+
+func pause(w *gc.Window) {
+	isPaused = !isPaused
+	if isPaused {
+		menu = createmenu(w)
 	}
 }
 
@@ -418,11 +424,11 @@ func handleEvents(s *snake, w *gc.Window) {
 		log.Printf("Event occurred: %s", event)
 		switch event {
 		case foodEatenEvent:
-			score += (scorePointValue*speedFactor + s.body.Size()) * (maxX / maxY)
+			score += (scorePointValue*speedFactor + s.body.Size()) - boundFactor
 			log.Printf("Score increased. Current score: %d", score)
 			break
 		case collisionEvent:
-			isRunning = false // exit
+			isPaused = true
 			break
 		case exitEvent:
 			isRunning = false // exit
@@ -527,6 +533,20 @@ func initLogging() *os.File {
 	return logFile
 }
 
+func getScoreBoundFactor() int {
+	factor := int(math.Min(float64(maxX), float64(maxY)))
+	maxFactor := scorePointValue * speedFactor
+	if factor >= maxFactor {
+		log.Println("Screen dimensions are too big -> Adjusting score calculation formula")
+		factor = maxFactor - 1
+	}
+	return factor
+}
+
+func initScoreBoundFactor() {
+	boundFactor = getScoreBoundFactor()
+}
+
 // ==================================================================
 
 func main() {
@@ -555,6 +575,8 @@ func main() {
 		log.Panicln("Error initializing the screen dimensions:", dimensionsInitError)
 		return
 	}
+
+	initScoreBoundFactor()
 
 	ticker := time.NewTicker(time.Second / speedFactor)
 

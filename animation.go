@@ -12,13 +12,18 @@ type Animation interface {
 
 // NewAnimation creates new animation object with specified frames array
 func NewAnimation(frames []string, duration int) Animation {
-	return &animation{frames, 0, duration}
+	return &animation{
+		frames:            frames,
+		currentFrameIndex: 0,
+		frameDuration:     duration,
+		currentFrameTime:  0}
 }
 
 type animation struct {
 	frames            []string
 	currentFrameIndex int
 	frameDuration     int
+	currentFrameTime  int
 }
 
 func (a *animation) framesAmount() int {
@@ -29,11 +34,18 @@ func (a *animation) hasNextFrame() bool {
 	return a.currentFrameIndex < a.framesAmount()-1
 }
 
+// MoveFrameIndex moves the current frame caret to the next frame.
+// If there are no frames left in the sequence - caret will be reset and point to the 0 frame
 func (a *animation) MoveFrameIndex() {
-	if a.hasNextFrame() {
-		a.currentFrameIndex++
+	if a.currentFrameTime < a.frameDuration {
+		a.currentFrameTime++
 	} else {
-		a.currentFrameIndex = 0
+		a.currentFrameTime = 0
+		if a.hasNextFrame() {
+			a.currentFrameIndex++
+		} else {
+			a.currentFrameIndex = 0
+		}
 	}
 }
 
