@@ -88,7 +88,7 @@ var menu = &GameMenu{}
 const (
 	continueMenuItemTitle  = "Continue"
 	newmenuItemTitle       = "New Game"
-	optionsMenuItemTitle   = "Options"
+	optionsMenuItemTitle   = "Help"
 	highScoreMenuItemTitle = "High Score"
 	aboutMenuItemTitle     = "About"
 	exitMenuItemTitle      = "Exit"
@@ -97,7 +97,7 @@ const (
 const (
 	continueMenuItemDescription  = " -- Resume current game"
 	newmenuItemDescription       = " -- Begin new game"
-	optionsMenuItemDescription   = " -- Review or change game settings"
+	optionsMenuItemDescription   = " -- See the gameplay help"
 	highScoreMenuItemDescription = " -- See the leadership table"
 	aboutMenuItemDescription     = " -- Info about creator"
 	exitMenuItemDescription      = " -- Save score and close the game"
@@ -159,9 +159,8 @@ func (p point) offsetP(off *point) {
 }
 
 func (s *snake) update(w *gc.Window) {
-	offset := getOffset(s)
-	dy := s.head.Data.(point).y + offset.y
-	dx := s.head.Data.(point).x + offset.x
+	dy := s.head.Data.(point).y + s.direction.y
+	dx := s.head.Data.(point).x + s.direction.x
 	newHead := &Node{Data: point{dy, dx}}
 
 	if s.checkCollision(newHead) {
@@ -170,7 +169,7 @@ func (s *snake) update(w *gc.Window) {
 
 	if s.checkFoodCollision(newHead) {
 		s.body.Prepend(&Node{Data: point{dy, dx}})
-		newHead.Data.(point).offsetP(offset)
+		newHead.Data.(point).offsetP(s.direction)
 		*currentFood = *generateFood(s)
 		events <- foodEatenEvent
 	}
@@ -180,21 +179,6 @@ func (s *snake) update(w *gc.Window) {
 	s.body.RemoveLast()
 	s.body.Prepend(newHead)
 	s.head = newHead
-}
-
-func getOffset(s *snake) *point {
-	switch s.direction {
-	case up:
-		return up
-	case down:
-		return down
-	case left:
-		return left
-	case right:
-		return right
-	default:
-		return nowhere
-	}
 }
 
 func (s *snake) draw(w *gc.Window) {
@@ -424,14 +408,14 @@ func handleEvents(s *snake, w *gc.Window) {
 		log.Printf("Event occurred: %s", event)
 		switch event {
 		case foodEatenEvent:
-			score += (scorePointValue*speedFactor + s.body.Size()) - boundFactor
+			incrementScore(s)
 			log.Printf("Score increased. Current score: %d", score)
 			break
 		case collisionEvent:
-			isPaused = true
+			isRunning = false
 			break
 		case exitEvent:
-			isRunning = false // exit
+			isRunning = false
 			break
 		case newGameEvent:
 			newGame(w, maxY/2, maxX/2)
@@ -448,6 +432,10 @@ func handleEvents(s *snake, w *gc.Window) {
 	default:
 		break
 	}
+}
+
+func incrementScore(s *snake) {
+	score += (scorePointValue*speedFactor + s.body.Size()) - boundFactor
 }
 
 // saveHighScore Enter player name and save the high score if it is greater than 0

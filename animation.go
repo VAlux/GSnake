@@ -37,7 +37,7 @@ func (a *animation) hasNextFrame() bool {
 // MoveFrameIndex moves the current frame caret to the next frame.
 // If there are no frames left in the sequence - caret will be reset and point to the 0 frame
 func (a *animation) MoveFrameIndex() {
-	if a.currentFrameTime < a.frameDuration {
+	if a.currentFrameTime < a.frameDuration-1 {
 		a.currentFrameTime++
 	} else {
 		a.currentFrameTime = 0
