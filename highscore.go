@@ -11,11 +11,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"sort"
 	"strconv"
 	t "time"
-
-	gc "github.com/rthornton128/goncurses"
 )
 
 const key = "cegthctrm.hysqrk.xrjnjhsqytdjpvj"
@@ -187,55 +184,4 @@ func (scores HighScores) Swap(i, j int) {
 // Less allows to sort high scores in descending score order
 func (scores HighScores) Less(i, j int) bool {
 	return scores[i].Score > scores[j].Score
-}
-
-// CreateHighScoreWindow creates and shows the window with top scores
-func CreateHighScoreWindow(s *gc.Window) {
-	log.Println("Creating high score window...")
-
-	lines, cols := s.MaxYX()
-	height, width := highScoreWindowHeight, highScoreWindowWidth
-	contentOffset := 3
-
-	wnd, windowCreateError := createWindow(height, width, (lines/2)-height/2, (cols/2)-width/2)
-	if windowCreateError != nil {
-		log.Panic("Error creating high score window: ", windowCreateError)
-	}
-
-	scores, scoreLoadError := LoadHighScore()
-	if scoreLoadError != nil {
-		log.Println("Error loading high scores: ", scoreLoadError)
-		scores = HighScores{}
-	}
-	sort.Sort(HighScores(scores))
-
-	wnd.Box(0, 0)
-	wnd.ColorOn(1)
-	wnd.MovePrint(
-		1,
-		(width/2)-(len(highscoreWindowTitle)/2),
-		highscoreWindowTitle)
-	wnd.ColorOff(1)
-
-	wnd.ColorOn(3)
-	for idx, score := range scores {
-		if idx >= maxAmountOfTopHighScores {
-			break
-		}
-		scoreContent := score.String()
-		wnd.MovePrint(
-			idx+contentOffset,
-			(width/2)-(len(scoreContent)/2)-contentOffset,
-			scoreContent)
-	}
-	wnd.ColorOff(3)
-
-	wnd.MoveAddChar(2, 0, gc.ACS_LTEE)
-	wnd.HLine(2, 1, gc.ACS_HLINE, width-2)
-	wnd.MoveAddChar(2, width-1, gc.ACS_RTEE)
-	wnd.Refresh()
-
-	log.Println("High score window created")
-
-	awaitClosingAction(wnd)
 }

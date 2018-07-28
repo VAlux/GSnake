@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 
@@ -421,7 +422,7 @@ func handleEvents(s *snake, w *gc.Window) {
 			newGame(w, maxY/2, maxX/2)
 			break
 		case highScoreEvent:
-			CreateHighScoreWindow(w)
+			createHighScoreWindow(w)
 			break
 		case aboutEvent:
 			createAboutWindow(w)
@@ -448,13 +449,7 @@ func createAboutWindow(w *gc.Window) {
 		"",
 		"Have fun!"}
 
-	mBox := MessageBox{
-		Height:      aboutWindowHeight,
-		Width:       aboutWindowWidth,
-		Title:       aboutWindowTitle,
-		MessageText: aboutText}
-
-	mBox.Show(w)
+	showMessageBox(aboutWindowHeight, aboutWindowWidth, aboutWindowTitle, aboutText, w)
 }
 
 func createHelpWindow(w *gc.Window) {
@@ -467,11 +462,38 @@ func createHelpWindow(w *gc.Window) {
 		"'W' 'S' 'A' 'D' for direction change",
 		"'P' or 'Esc' for pause/menu"}
 
+	showMessageBox(helpWindowHeight, helpWindowWidth, helpWindowTitle, helpText, w)
+}
+
+func createHighScoreWindow(w *gc.Window) {
+	const highscoreWindowTitle = "High scores"
+	const highScoreWindowWidth = 70
+	const highScoreWindowHeight = 14
+
+	scores, scoreLoadError := LoadHighScore()
+	if scoreLoadError != nil {
+		log.Println("Error loading high scores: ", scoreLoadError)
+		scores = HighScores{}
+	}
+	sort.Sort(scores)
+
+	scoreContent := []string{}
+	for idx, score := range scores {
+		if idx >= maxAmountOfTopHighScores {
+			break
+		}
+		scoreContent = append(scoreContent, score.String())
+	}
+
+	showMessageBox(highScoreWindowHeight, highScoreWindowWidth, highscoreWindowTitle, scoreContent, w)
+}
+
+func showMessageBox(height int, width int, title string, text []string, w *gc.Window) {
 	mBox := MessageBox{
-		Height:      helpWindowHeight,
-		Width:       helpWindowWidth,
-		Title:       helpWindowTitle,
-		MessageText: helpText}
+		Height:      height,
+		Width:       width,
+		Title:       title,
+		MessageText: text}
 
 	mBox.Show(w)
 }
