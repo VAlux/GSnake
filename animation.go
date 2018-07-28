@@ -10,6 +10,13 @@ type Animation interface {
 	hasNextFrame() bool
 }
 
+type animation struct {
+	frames            []string
+	currentFrameIndex int
+	frameDuration     int
+	currentFrameTime  int
+}
+
 // NewAnimation creates new animation object with specified frames array
 func NewAnimation(frames []string, duration int) Animation {
 	return &animation{
@@ -17,13 +24,6 @@ func NewAnimation(frames []string, duration int) Animation {
 		currentFrameIndex: 0,
 		frameDuration:     duration,
 		currentFrameTime:  0}
-}
-
-type animation struct {
-	frames            []string
-	currentFrameIndex int
-	frameDuration     int
-	currentFrameTime  int
 }
 
 func (a *animation) framesAmount() int {
