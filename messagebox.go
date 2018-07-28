@@ -17,7 +17,7 @@ type MessageBox struct {
 
 // Show creates the window and shows it as a child of specified window
 func (mBox *MessageBox) Show(s *gc.Window) {
-	log.Println("Creating about window...")
+	log.Println(fmt.Sprintf("Creating %s window...", mBox.Title))
 
 	lines, cols := s.MaxYX()
 	height, width := mBox.Height, mBox.Width
