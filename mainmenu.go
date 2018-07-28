@@ -57,8 +57,6 @@ func (m *GameMenu) HandleInput() bool {
 	ch := m.window.GetChar()
 
 	switch ch {
-	case 'q':
-		return false
 	case gc.KEY_DOWN:
 		m.menu.Driver(gc.REQ_DOWN)
 	case gc.KEY_UP:
