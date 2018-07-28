@@ -62,7 +62,6 @@ func promptPlayerName(w *gc.Window) string {
 	row, col = (row/2)-1, 4
 	w.MovePrint(row, col, msg)
 
-	var str string
 	str, err := w.GetString(12)
 	if err != nil {
 		log.Panic("Error getting player name string: ", err)

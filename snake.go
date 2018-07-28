@@ -31,7 +31,7 @@ const (
 	exitEvent      = "exit"
 	foodEatenEvent = "foodEaten"
 	newGameEvent   = "newGame"
-	optionsEvent   = "options"
+	helpEvent      = "help"
 	highScoreEvent = "highScore"
 	aboutEvent     = "about"
 )
@@ -114,7 +114,7 @@ var menuOptionsKeySet = &[]MenuItemContent{
 var menuOptionsHandlerMap = &map[string]MenuItemHandlerFunction{
 	continueMenuItemTitle:  continueOptionHandler,
 	newmenuItemTitle:       newGameOptionHandler,
-	optionsMenuItemTitle:   optionsOptionHandler,
+	optionsMenuItemTitle:   helpOptionHandler,
 	highScoreMenuItemTitle: highScoreOptionHandler,
 	aboutMenuItemTitle:     aboutOptionHandler,
 	exitMenuItemTitle:      exitOptionHandler}
@@ -424,7 +424,10 @@ func handleEvents(s *snake, w *gc.Window) {
 			CreateHighScoreWindow(w)
 			break
 		case aboutEvent:
-			CreateAboutWindow(w)
+			createAboutWindow(w)
+			break
+		case helpEvent:
+			createHelpWindow(w)
 			break
 		default:
 			break
@@ -432,6 +435,45 @@ func handleEvents(s *snake, w *gc.Window) {
 	default:
 		break
 	}
+}
+
+func createAboutWindow(w *gc.Window) {
+	const aboutWindowHeight = 8
+	const aboutWindowWidth = 40
+	const aboutWindowTitle = "About"
+
+	var aboutText = []string{
+		"This game is created by Alvo",
+		"for beloved Tanya :)",
+		"",
+		"Have fun!"}
+
+	mBox := MessageBox{
+		Height:      aboutWindowHeight,
+		Width:       aboutWindowWidth,
+		Title:       aboutWindowTitle,
+		MessageText: aboutText}
+
+	mBox.Show(w)
+}
+
+func createHelpWindow(w *gc.Window) {
+	const helpWindowHeight = 8
+	const helpWindowWidth = 42
+	const helpWindowTitle = "Help"
+
+	var helpText = []string{
+		"Controls:",
+		"'W' 'S' 'A' 'D' for direction change",
+		"'P' or 'Esc' for pause/menu"}
+
+	mBox := MessageBox{
+		Height:      helpWindowHeight,
+		Width:       helpWindowWidth,
+		Title:       helpWindowTitle,
+		MessageText: helpText}
+
+	mBox.Show(w)
 }
 
 func incrementScore(s *snake) {
@@ -463,9 +505,9 @@ func newGameOptionHandler() bool {
 	return false
 }
 
-func optionsOptionHandler() bool {
-	log.Print("Options menu option selected")
-	events <- optionsEvent
+func helpOptionHandler() bool {
+	log.Print("Help menu option selected")
+	events <- helpEvent
 	return false
 }
 
