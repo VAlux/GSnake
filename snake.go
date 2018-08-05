@@ -19,7 +19,6 @@ import (
 const (
 	headTexture  = `#`
 	tailTexture  = `o`
-	foodTexture  = `*`
 	emptyTexture = ` `
 )
 
@@ -475,6 +474,7 @@ func createHighScoreWindow(w *gc.Window) {
 		log.Println("Error loading high scores: ", scoreLoadError)
 		scores = HighScores{}
 	}
+
 	sort.Sort(scores)
 
 	scoreContent := []string{}
