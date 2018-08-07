@@ -281,11 +281,11 @@ func handleInput(w *gc.Window, s *snake) {
 func pause(w *gc.Window) {
 	isPaused = !isPaused
 	if isPaused {
-		menu = createmenu(w)
+		menu = createMenu(w)
 	}
 }
 
-func createmenu(w *gc.Window) *GameMenu {
+func createMenu(w *gc.Window) *GameMenu {
 	return NewMenu(w, menuOptionsKeySet, menuOptionsHandlerMap)
 }
 
@@ -638,7 +638,7 @@ func main() {
 		log.Panic("Error initializing game window:", err)
 		return
 	}
-	menu = createmenu(gameWindow)
+	menu = createMenu(gameWindow)
 	//
 
 	newGame(gameWindow, maxY/2, maxX/2)
