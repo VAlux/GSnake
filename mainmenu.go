@@ -1,117 +1,126 @@
 package main
 
 import (
+	"fmt"
+	"log"
+
 	gc "github.com/rthornton128/goncurses"
 )
 
-// MenuWindowWidth defined the width of the menu window in characters
-const MenuWindowWidth = 55
+const (
+	menuWindowWidth  = 55
+	menuWindowHeight = 10
+	menuTitle        = "Main Menu"
+)
 
-// MenuWindowHeight defined the height of the menu window in characters
-const MenuWindowHeight = 10
-
-const menuTitle = "Main Menu"
-
-// MenuWindow interface for interaction with GameMenu type
-type MenuWindow interface {
-	Free()
+// Menu is an interface for interaction with Menu type
+type Menu interface {
 	HandleInput() bool
-	init()
-}
-
-type menuItemHandlerMap = map[string]MenuItemHandlerFunction
-
-// GameMenu contains all of the ncurses main-menu realted stuff
-type GameMenu struct {
-	window             *gc.Window
-	menu               *gc.Menu
-	menuItems          []*gc.MenuItem
-	optionsHandlersMap menuItemHandlerMap
-}
-
-// MenuItemContent describes the title and description of the menu item
-type MenuItemContent struct {
-	MenuItemTitle       string
-	MenuItemDescription string
+	init(stdscr *gc.Window, items []*MenuItem)
 }
 
 // MenuItemHandlerFunction represents an action point on the particular menu item
 type MenuItemHandlerFunction func() bool
 
-// Free removes the menu, clear it from the screen and free the resources
-func (m *GameMenu) Free() {
-	m.menu.UnPost()
-	for _, item := range m.menuItems {
-		item.Free()
-	}
-	m.menu.Free()
-	m.window.Erase()
-	m.window.Refresh()
-	m.window.Delete()
+// MenuWindow  contains all of the ncurses main-menu realted stuff
+type MenuWindow struct {
+	window           *gc.Window
+	items            []*MenuItem
+	currentItemIndex int
 }
 
-// HandleInput contains all of the menu window input action handling
-func (m *GameMenu) HandleInput() bool {
-	m.menu.Post()
+// MenuItem describes the title description and functionality of the menu item
+type MenuItem struct {
+	MenuItemTitle       string
+	MenuItemDescription string
+	MenuItemHandler     MenuItemHandlerFunction
+}
+
+// NewMenuItem creates new menu item with specified title, description and handler
+func NewMenuItem(title string, description string, handler MenuItemHandlerFunction) *MenuItem {
+	return &MenuItem{
+		MenuItemTitle:       title,
+		MenuItemDescription: description,
+		MenuItemHandler:     handler,
+	}
+}
+
+// HandleInput obtains the user input and executes actions based on it.
+func (m *MenuWindow) HandleInput() bool {
 	gc.Update()
 	ch := m.window.GetChar()
 
 	switch ch {
 	case gc.KEY_DOWN:
-		m.menu.Driver(gc.REQ_DOWN)
+		m.moveCaretDown()
 	case gc.KEY_UP:
-		m.menu.Driver(gc.REQ_UP)
+		m.moveCaretUp()
 	case gc.KEY_RETURN:
-		current := m.menu.Current(nil).Name()
-		return m.optionsHandlersMap[current]()
+		return m.executeCurrentHandler()
 	default:
 		break
 	}
+
 	m.window.Refresh()
 	return true
 }
 
-// NewMenu creates new instance of main menu nested in specified Window with specified option items
-func NewMenu(stdscr *gc.Window, items *[]MenuItemContent, handlers *menuItemHandlerMap) *GameMenu {
-	menu := new(GameMenu)
-	menu.init(stdscr, *items)
-	menu.optionsHandlersMap = *handlers
-	return menu
+func (m *MenuWindow) moveCaretDown() {
+	if m.currentItemIndex == len(m.items)-1 {
+		m.currentItemIndex = 0
+	} else {
+		m.currentItemIndex++
+	}
 }
 
-func (m *GameMenu) init(stdscr *gc.Window, options []MenuItemContent) {
-	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
+func (m *MenuWindow) moveCaretUp() {
+	if m.currentItemIndex == 0 {
+		m.currentItemIndex = len(m.items) - 1
+	} else {
+		m.currentItemIndex--
+	}
+}
 
-	m.menuItems = make([]*gc.MenuItem, len(options))
+func (m *MenuWindow) getCurrentItem() *MenuItem {
+	return m.items[m.currentItemIndex]
+}
 
+func (m *MenuWindow) executeCurrentHandler() bool {
+	return m.getCurrentItem().MenuItemHandler()
+}
+
+func (m *MenuWindow) init(stdscr *gc.Window, items []*MenuItem) {
 	maxY, maxX := stdscr.MaxYX()
+	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
+	m.currentItemIndex = 0
+	m.items = items
+	m.window = createMenuWindow(stdscr, items, maxX)
+	m.window.Refresh()
+}
 
-	for index, item := range options {
-		m.menuItems[index], _ = gc.NewItem(item.MenuItemTitle, item.MenuItemDescription)
+func createMenuWindow(stdscr *gc.Window, items []*MenuItem, x int) *gc.Window {
+	wnd, windowCreateError := gc.NewWindow(menuWindowHeight, menuWindowWidth, maxY/2-5, maxX/2-30)
+	if windowCreateError != nil {
+		log.Panic(fmt.Sprintf("Error creating main menu window: %s", windowCreateError))
 	}
 
-	menu, _ := gc.NewMenu(m.menuItems)
+	wnd.Keypad(true)
+	wnd.Box(0, 0)
+	wnd.ColorOn(1)
+	wnd.MovePrint(1, (x/2)-(len(menuTitle)/2), menuTitle)
+	wnd.ColorOff(1)
+	for idx, item := range items {
+		wnd.MovePrint(idx+2, 1, item.MenuItemTitle+item.MenuItemDescription)
+	}
+	wnd.MoveAddChar(2, 0, gc.ACS_LTEE)
+	wnd.HLine(2, 1, gc.ACS_HLINE, x-2)
+	wnd.MoveAddChar(2, x-1, gc.ACS_RTEE)
+	return wnd
+}
 
-	// Centered relative to game-window
-	menuWindow, _ := gc.NewWindow(MenuWindowHeight, MenuWindowWidth, maxY/2-5, maxX/2-30)
-	menuWindow.Keypad(true)
-
-	menu.SetWindow(menuWindow)
-	derWin := menuWindow.Derived(6, 52, 3, 1)
-	menu.SubWindow(derWin)
-	menu.Mark(" => ")
-
-	m.menu = menu
-
-	_, x := menuWindow.MaxYX()
-
-	menuWindow.Box(0, 0)
-	menuWindow.ColorOn(1)
-	menuWindow.MovePrint(1, (x/2)-(len(menuTitle)/2), menuTitle)
-	menuWindow.ColorOff(1)
-	menuWindow.MoveAddChar(2, 0, gc.ACS_LTEE)
-	menuWindow.HLine(2, 1, gc.ACS_HLINE, x-2)
-	menuWindow.MoveAddChar(2, x-1, gc.ACS_RTEE)
-
-	m.window = menuWindow
+// NewMenu creates new instance of main menu nested in specified Window with specified option items
+func NewMenu(stdscr *gc.Window, items []*MenuItem) Menu {
+	menu := new(MenuWindow)
+	menu.init(stdscr, items)
+	return menu
 }

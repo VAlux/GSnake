@@ -51,3 +51,10 @@ func (mBox *MessageBox) Show(s *gc.Window) {
 
 	awaitClosingAction(wnd)
 }
+
+func awaitClosingAction(wnd *gc.Window) {
+	for wnd.GetChar() == 0 {
+		gc.Nap(10)
+	}
+	removeWindow(wnd)
+}

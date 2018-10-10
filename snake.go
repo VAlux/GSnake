@@ -72,7 +72,7 @@ var (
 var isRunning = true
 
 //Main menu is shown during isPaused = true
-var isPaused = true
+var isPaused = false
 
 var score = 0
 var boundFactor = 0
@@ -83,7 +83,7 @@ const initialLength = 4
 
 //======================= Main menu definitions =======================
 
-var menu = &GameMenu{}
+var menu = &Menu{}
 
 const (
 	continueMenuItemTitle  = "Continue"
@@ -103,21 +103,36 @@ const (
 	exitMenuItemDescription      = " -- Save score and close the game"
 )
 
-var menuOptionsKeySet = &[]MenuItemContent{
-	MenuItemContent{MenuItemTitle: continueMenuItemTitle, MenuItemDescription: continueMenuItemDescription},
-	MenuItemContent{MenuItemTitle: newmenuItemTitle, MenuItemDescription: newmenuItemDescription},
-	MenuItemContent{MenuItemTitle: optionsMenuItemTitle, MenuItemDescription: optionsMenuItemDescription},
-	MenuItemContent{MenuItemTitle: highScoreMenuItemTitle, MenuItemDescription: highScoreMenuItemDescription},
-	MenuItemContent{MenuItemTitle: aboutMenuItemTitle, MenuItemDescription: aboutMenuItemDescription},
-	MenuItemContent{MenuItemTitle: exitMenuItemTitle, MenuItemDescription: exitMenuItemDescription}}
+var menuOptionsKeySet = &[]MenuItem{
+	MenuItem{
+		MenuItemTitle:       continueMenuItemTitle,
+		MenuItemDescription: continueMenuItemDescription,
+		MenuItemHandler:     continueOptionHandler},
 
-var menuOptionsHandlerMap = &map[string]MenuItemHandlerFunction{
-	continueMenuItemTitle:  continueOptionHandler,
-	newmenuItemTitle:       newGameOptionHandler,
-	optionsMenuItemTitle:   helpOptionHandler,
-	highScoreMenuItemTitle: highScoreOptionHandler,
-	aboutMenuItemTitle:     aboutOptionHandler,
-	exitMenuItemTitle:      exitOptionHandler}
+	MenuItem{
+		MenuItemTitle:       newmenuItemTitle,
+		MenuItemDescription: newmenuItemDescription,
+		MenuItemHandler:     newGameOptionHandler},
+
+	MenuItem{
+		MenuItemTitle:       optionsMenuItemTitle,
+		MenuItemDescription: optionsMenuItemDescription,
+		MenuItemHandler:     helpOptionHandler},
+
+	MenuItem{
+		MenuItemTitle:       highScoreMenuItemTitle,
+		MenuItemDescription: highScoreMenuItemDescription,
+		MenuItemHandler:     highScoreOptionHandler},
+
+	MenuItem{
+		MenuItemTitle:       aboutMenuItemTitle,
+		MenuItemDescription: aboutMenuItemDescription,
+		MenuItemHandler:     aboutOptionHandler},
+
+	MenuItem{
+		MenuItemTitle:       exitMenuItemTitle,
+		MenuItemDescription: exitMenuItemDescription,
+		MenuItemHandler:     exitOptionHandler}}
 
 //======================= Types =======================
 type point struct {
@@ -285,8 +300,8 @@ func pause(w *gc.Window) {
 	}
 }
 
-func createMenu(w *gc.Window) *GameMenu {
-	return NewMenu(w, menuOptionsKeySet, menuOptionsHandlerMap)
+func createMenu(w *gc.Window) *Menu {
+	return NewMenu(w, menuOptionsKeySet)
 }
 
 func gameOver(s *gc.Window) {
@@ -356,13 +371,6 @@ func createWindow(height, width, y, x int) (*gc.Window, error) {
 		return nil, errors.New(message)
 	}
 	return wnd, nil
-}
-
-func awaitClosingAction(wnd *gc.Window) {
-	for wnd.GetChar() == 0 {
-		gc.Nap(10)
-	}
-	removeWindow(wnd)
 }
 
 func removeWindow(wnd *gc.Window) {
