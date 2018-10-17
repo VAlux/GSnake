@@ -83,7 +83,7 @@ const initialLength = 4
 
 //======================= Main menu definitions =======================
 
-var menu = &Menu{}
+var menu = &MenuWindow{}
 
 const (
 	continueMenuItemTitle  = "Continue"
@@ -103,33 +103,33 @@ const (
 	exitMenuItemDescription      = " -- Save score and close the game"
 )
 
-var menuOptionsKeySet = &[]MenuItem{
-	MenuItem{
+var menuOptionsKeySet = []*MenuItem{
+	&MenuItem{
 		MenuItemTitle:       continueMenuItemTitle,
 		MenuItemDescription: continueMenuItemDescription,
 		MenuItemHandler:     continueOptionHandler},
 
-	MenuItem{
+	&MenuItem{
 		MenuItemTitle:       newmenuItemTitle,
 		MenuItemDescription: newmenuItemDescription,
 		MenuItemHandler:     newGameOptionHandler},
 
-	MenuItem{
+	&MenuItem{
 		MenuItemTitle:       optionsMenuItemTitle,
 		MenuItemDescription: optionsMenuItemDescription,
 		MenuItemHandler:     helpOptionHandler},
 
-	MenuItem{
+	&MenuItem{
 		MenuItemTitle:       highScoreMenuItemTitle,
 		MenuItemDescription: highScoreMenuItemDescription,
 		MenuItemHandler:     highScoreOptionHandler},
 
-	MenuItem{
+	&MenuItem{
 		MenuItemTitle:       aboutMenuItemTitle,
 		MenuItemDescription: aboutMenuItemDescription,
 		MenuItemHandler:     aboutOptionHandler},
 
-	MenuItem{
+	&MenuItem{
 		MenuItemTitle:       exitMenuItemTitle,
 		MenuItemDescription: exitMenuItemDescription,
 		MenuItemHandler:     exitOptionHandler}}
@@ -296,11 +296,11 @@ func handleInput(w *gc.Window, s *snake) {
 func pause(w *gc.Window) {
 	isPaused = !isPaused
 	if isPaused {
-		menu = createMenu(w)
+		menu = createMenu(w).(*MenuWindow)
 	}
 }
 
-func createMenu(w *gc.Window) *Menu {
+func createMenu(w *gc.Window) Menu {
 	return NewMenu(w, menuOptionsKeySet)
 }
 
@@ -646,7 +646,7 @@ func main() {
 		log.Panic("Error initializing game window:", err)
 		return
 	}
-	menu = createMenu(gameWindow)
+	menu = createMenu(gameWindow).(*MenuWindow)
 	//
 
 	newGame(gameWindow, maxY/2, maxX/2)

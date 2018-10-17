@@ -8,14 +8,18 @@ import (
 )
 
 const (
-	menuWindowWidth  = 55
-	menuWindowHeight = 10
-	menuTitle        = "Main Menu"
+	// MenuWindowWidth represents the width of the menu window in characters
+	MenuWindowWidth = 55
+	// MenuWindowHeight represents the height of the menu window in characters
+	MenuWindowHeight = 10
+
+	menuTitle = "Main Menu"
 )
 
 // Menu is an interface for interaction with Menu type
 type Menu interface {
 	HandleInput() bool
+	Free()
 	init(stdscr *gc.Window, items []*MenuItem)
 }
 
@@ -94,12 +98,18 @@ func (m *MenuWindow) init(stdscr *gc.Window, items []*MenuItem) {
 	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
 	m.currentItemIndex = 0
 	m.items = items
-	m.window = createMenuWindow(stdscr, items, maxX)
+	m.window = createMenuWindow(stdscr, items, maxX, maxY)
 	m.window.Refresh()
 }
 
-func createMenuWindow(stdscr *gc.Window, items []*MenuItem, x int) *gc.Window {
-	wnd, windowCreateError := gc.NewWindow(menuWindowHeight, menuWindowWidth, maxY/2-5, maxX/2-30)
+// Free erase the content of the window from the screen and frees the memory, allocated for it.
+func (m *MenuWindow) Free() {
+	m.window.Erase()
+	m.window.Delete()
+}
+
+func createMenuWindow(stdscr *gc.Window, items []*MenuItem, maxX int, maxY int) *gc.Window {
+	wnd, windowCreateError := gc.NewWindow(MenuWindowHeight, MenuWindowWidth, maxY/2-5, maxX/2-30)
 	if windowCreateError != nil {
 		log.Panic(fmt.Sprintf("Error creating main menu window: %s", windowCreateError))
 	}
@@ -107,14 +117,14 @@ func createMenuWindow(stdscr *gc.Window, items []*MenuItem, x int) *gc.Window {
 	wnd.Keypad(true)
 	wnd.Box(0, 0)
 	wnd.ColorOn(1)
-	wnd.MovePrint(1, (x/2)-(len(menuTitle)/2), menuTitle)
+	wnd.MovePrint(1, (30/2)-(len(menuTitle)/2), menuTitle)
 	wnd.ColorOff(1)
 	for idx, item := range items {
 		wnd.MovePrint(idx+2, 1, item.MenuItemTitle+item.MenuItemDescription)
 	}
 	wnd.MoveAddChar(2, 0, gc.ACS_LTEE)
-	wnd.HLine(2, 1, gc.ACS_HLINE, x-2)
-	wnd.MoveAddChar(2, x-1, gc.ACS_RTEE)
+	wnd.HLine(2, 1, gc.ACS_HLINE, 30-2)
+	wnd.MoveAddChar(2, 30-1, gc.ACS_RTEE)
 	return wnd
 }
 
