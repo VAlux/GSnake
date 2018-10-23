@@ -13,13 +13,18 @@ const (
 	// MenuWindowHeight represents the height of the menu window in characters
 	MenuWindowHeight = 10
 
-	menuTitle = "Main Menu"
+	menuTitle            = "Main Menu"
+	menuMark             = " => "
+	menuMarkEmpty        = "    "
+	menuItemOffset       = 5
+	menuContentTopOffset = 3
 )
 
 // Menu is an interface for interaction with Menu type
 type Menu interface {
 	HandleInput() bool
 	Free()
+	Refresh()
 	init(stdscr *gc.Window, items []*MenuItem)
 }
 
@@ -38,6 +43,10 @@ type MenuItem struct {
 	MenuItemTitle       string
 	MenuItemDescription string
 	MenuItemHandler     MenuItemHandlerFunction
+}
+
+func (item *MenuItem) String() string {
+	return item.MenuItemTitle + "\t" + item.MenuItemDescription
 }
 
 // NewMenuItem creates new menu item with specified title, description and handler
@@ -65,7 +74,7 @@ func (m *MenuWindow) HandleInput() bool {
 		break
 	}
 
-	m.window.Refresh()
+	m.Refresh()
 	return true
 }
 
@@ -98,7 +107,20 @@ func (m *MenuWindow) init(stdscr *gc.Window, items []*MenuItem) {
 	gc.InitPair(1, gc.C_RED, gc.C_BLACK)
 	m.currentItemIndex = 0
 	m.items = items
-	m.window = createMenuWindow(stdscr, items, maxX, maxY)
+	m.window = createMenuWindow(items, maxX, maxY)
+	m.window.Refresh()
+}
+
+// Refresh performs redrawing of the menu window contents
+func (m *MenuWindow) Refresh() {
+	for idx, item := range m.items {
+		if idx == m.currentItemIndex {
+			m.window.MovePrint(idx+menuContentTopOffset, 1, menuMark)
+		} else {
+			m.window.MovePrint(idx+menuContentTopOffset, 1, menuMarkEmpty)
+		}
+		m.window.MovePrint(idx+menuContentTopOffset, menuItemOffset, item.String())
+	}
 	m.window.Refresh()
 }
 
@@ -108,7 +130,7 @@ func (m *MenuWindow) Free() {
 	m.window.Delete()
 }
 
-func createMenuWindow(stdscr *gc.Window, items []*MenuItem, maxX int, maxY int) *gc.Window {
+func createMenuWindow(items []*MenuItem, maxX int, maxY int) *gc.Window {
 	wnd, windowCreateError := gc.NewWindow(MenuWindowHeight, MenuWindowWidth, maxY/2-5, maxX/2-30)
 	if windowCreateError != nil {
 		log.Panic(fmt.Sprintf("Error creating main menu window: %s", windowCreateError))
@@ -117,14 +139,14 @@ func createMenuWindow(stdscr *gc.Window, items []*MenuItem, maxX int, maxY int) 
 	wnd.Keypad(true)
 	wnd.Box(0, 0)
 	wnd.ColorOn(1)
-	wnd.MovePrint(1, (30/2)-(len(menuTitle)/2), menuTitle)
+	wnd.MovePrint(1, (MenuWindowWidth/2)-(len(menuTitle)/2), menuTitle)
 	wnd.ColorOff(1)
 	for idx, item := range items {
-		wnd.MovePrint(idx+2, 1, item.MenuItemTitle+item.MenuItemDescription)
+		wnd.MovePrint(idx+menuContentTopOffset, menuItemOffset, item.String())
 	}
 	wnd.MoveAddChar(2, 0, gc.ACS_LTEE)
-	wnd.HLine(2, 1, gc.ACS_HLINE, 30-2)
-	wnd.MoveAddChar(2, 30-1, gc.ACS_RTEE)
+	wnd.HLine(2, 1, gc.ACS_HLINE, MenuWindowWidth-2)
+	wnd.MoveAddChar(2, MenuWindowWidth-1, gc.ACS_RTEE)
 	return wnd
 }
 
