@@ -664,7 +664,7 @@ func main() {
 				if !menu.HandleInput() {
 					isPaused = false
 					menu.Free()
-					stdscr.Refresh()
+					
 				}
 			}
 		}
